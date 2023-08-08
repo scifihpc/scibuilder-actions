@@ -1,0 +1,68 @@
+FROM rockylinux:9
+
+# Add development tools
+
+RUN dnf groupinstall -y "Development Tools" \
+  && dnf clean all \
+  && rm -rf /var/cache/yum
+ 
+# Add needed repos
+
+RUN dnf install -y epel-release                  \
+  && dnf config-manager --enable epel            \
+  && dnf install -y yum-utils                    \
+  && dnf config-manager --set-enabled crb        \
+  && dnf update -y                               \
+  && yum clean all                               \
+  && rm -rf /var/cache/yum
+
+# Install base software that will be needed by spack
+
+RUN dnf install -y                     \
+  diffutils                            \
+  gcc                                  \
+  gcc-c++                              \
+  gmp-devel                            \
+  gnupg                                \
+  openssl-devel                        \
+  libffi-devel                         \
+  Lmod                                 \
+  m4                                   \
+  make                                 \
+  perl                                 \
+  python39                             \
+  platform-python-devel                \
+  wget                                 \
+  && dnf clean all                     \
+  && rm -rf /var/cache/yum
+
+# Fix locales
+
+RUN dnf install -y                     \
+  glibc-locale-source                  \
+  langpacks-en                         \
+  glibc-all-langpacks                  \
+  && dnf clean all                     \
+  && rm -rf /var/cache/yum
+
+RUN echo 'LANG="en_US.utf8"' > /etc/locale.conf \
+  && dnf reinstall -y                   \
+  glibc-common                         \
+  && dnf clean all                     \
+  && rm -rf /var/cache/yum
+
+RUN localedef -i en_US -f UTF-8 en_US.UTF-8
+
+# Add slurm and infiniband verbs
+
+RUN dnf install -y                     \
+  libibverbs                           \
+  slurm                                \
+  slurm-devel                          \
+  && dnf clean all                     \
+  && rm -rf /var/cache/yum
+
+# Create folders used by scibuilder-actions
+RUN mkdir /appl
+RUN mkdir /spack
+RUN mkdir /cache

@@ -1,0 +1,31 @@
+modules:
+  default:
+    roots:
+      lmod: /appl/scibuilder-spack/aalto-rocky9/2023-01/lmod
+    lmod:
+      core_compilers:
+      - gcc@11.3.1
+packages:
+  all:
+    target: [haswell]
+  slurm:
+    externals:
+    - prefix: /usr
+      spec: slurm@21-08-8-2
+    buildable: false
+  openmpi:
+    variants: fabrics=ucx +static schedulers=slurm
+  ucx:
+    version: [1.13.1]
+    variants: +pic +rc +dc +ud +dm
+  readline:
+    version: [8.1]
+  openssh:
+    variants: ~gssapi
+config:
+  install_tree:
+    root: /appl/scibuilder-spack/aalto-rocky9/2023-01/software
+  misc_cache: /cache/spack/aalto-rocky9/2023-01/misc_cache
+  build_stage:
+  - /stage/aalto-rocky9/spack/2023-01
+compilers: []

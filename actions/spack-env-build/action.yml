@@ -1,0 +1,96 @@
+# action.yml
+name: 'Scibuilder Spack build'
+description: 'Run Scibuilder Spack build'
+inputs:
+  spack-repository:
+    description: 'Spack repository to use'
+    default: 'https://github.com/spack/spack.git'
+  spack-version:
+    description: 'Spack version'
+    required: true
+  compiler-packages:
+    description: 'Compiler packages to install'
+    required: true
+  system-compiler:
+    description: 'System compiler used for building base-compiler'
+    required: true
+  arch:
+    description: 'System architecture for the base compiler'
+    default: ''
+  environment:
+    description: 'Environment to build'
+    required: true
+  customizations:
+    description: 'Spack customizations'
+    default: ''
+runs:
+  using: 'composite'
+  steps:
+    - name: Initialize spack
+      shell: bash
+      env:
+        SPACK_CUSTOMIZATIONS: ${{ inputs.customizations }}
+      run: |
+        # Clone spack repository
+
+        bash -c "[[ -d /spack/.git ]] && ( cd /spack && git reset --hard ${{ inputs.spack-version }} )  || ( git clone ${{ inputs.spack-repository }} /spack && cd /spack && git checkout ${{ inputs.spack-version }}  )"
+
+        # Activate spack
+        source /spack/share/spack/setup-env.sh
+
+        # Clean misc cache
+        spack clean -m
+
+        # Find system compiler
+        spack compiler find
+
+        # Disable default boostrap methods
+        spack bootstrap disable github-actions-v0.4
+        spack bootstrap disable github-actions-v0.3
+
+        # Bootstrap cached bootstrap
+        spack bootstrap root /buildcache/bootstrap
+        spack bootstrap root
+
+        # Add system buildcache for compilers
+        spack mirror add system_buildcache /buildcache/system
+
+        # Remove system compiler
+        spack compiler remove ${{ inputs.system-compiler }} 
+
+        # Add compilers packages and search for compilers
+        for compiler_package in ${{ inputs.compiler-packages }}
+        do
+          bash -c "spack location -i ${compiler_package} | xargs spack compiler find"
+          bash -c "spack location -i ${compiler_package} | xargs -I{} spack compiler find {}/compiler/latest/linux/bin"
+          bash -c "spack location -i ${compiler_package} | xargs -I{} spack compiler find {}/compiler/latest/linux/bin/intel64"
+        done
+
+        # Remove system buildcache
+        spack mirror remove system_buildcache
+
+        # Clean up previous installations from the environment
+        rm -f ${{ inputs.environment }}/spack.lock
+        rm -rf ${{ inputs.environment }}/.spack-env
+
+        # Add buildcache for finished packages
+        mkdir -p /buildcache/final
+        bash -c "spack --env-dir ${{ inputs.environment }} mirror list | grep -q final_buildcache || spack --env-dir ${{ inputs.environment }} mirror add final_buildcache /buildcache/final"
+
+        # List installed packages
+        spack --env-dir ${{ inputs.environment }} buildcache list --allarch
+
+        # Concretize environment
+        spack --env-dir ${{ inputs.environment }} concretize
+
+        # Install environment
+        spack --env-dir ${{ inputs.environment }} install --no-check-signature
+
+        # Push finished products to buildcache
+        spack --env-dir ${{ inputs.environment }} buildcache push -a -u /buildcache/final
+
+        # Update buildcache index
+        spack --env-dir ${{ inputs.environment }} buildcache update-index /buildcache/final
+
+        # Remove buildcache
+        spack --env-dir ${{ inputs.environment }}  mirror remove final_buildcache

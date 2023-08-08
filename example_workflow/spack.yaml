@@ -1,0 +1,40 @@
+spack:
+  include:
+  - ${SPACK_CUSTOMIZATIONS}
+  view: false
+  concretizer:
+    unify: when_possible
+    reuse: dependencies
+  config:
+    build_language: en_US.utf8
+    source_cache: /cache/spack/global/source_cache
+    install_missing_compilers: true
+  modules:
+    default:
+      enable:
+      - lmod
+      lmod:
+        hash_length: 0
+        hierarchy:
+        - mpi
+        all:
+          autoload: direct
+  definitions:
+  - compilers: [gcc@11.3.0, oneapi@2023.1.0]
+  - mpis: [openmpi@4.1.4]
+  - mpipackages:
+    - hdf5+mpi
+    - netcdf-c@4.9.2
+  specs:
+  - gcc@11.3.0
+  - intel-oneapi-compilers@2023.1.0%gcc@11.3.0
+  - cmake@3.24.3
+  - lmod@8.7.2
+  - matrix:
+    - [$mpis]
+    - [$%compilers]
+  - matrix:
+    - [$mpipackages]
+    - [$^mpis]
+    - [$%compilers]
+  mirrors: {}
