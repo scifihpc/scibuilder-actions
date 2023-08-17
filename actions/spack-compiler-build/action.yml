@@ -65,7 +65,7 @@ runs:
       if: "${{ inputs.build-with-package != '' }}"
       shell: bash
       run: |
-        echo "::group::Find dependency compiler "${{ inputs.build-with-package }}
+        echo "::group::Find dependency compiler"
         # Activate spack
         source /spack/share/spack/setup-env.sh
 
@@ -80,7 +80,7 @@ runs:
     - name: Install compiler
       shell: bash
       run: |
-        echo "::group::Install compiler "${{ inputs.compiler-package }}
+        echo "::group::Install compiler"
         # Activate spack
         source /spack/share/spack/setup-env.sh
 
