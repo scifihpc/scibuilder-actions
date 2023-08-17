@@ -32,9 +32,8 @@ runs:
     - name: Initialize spack
       shell: bash
       run: |
-        # Clone spack repository
-
         echo "::group::Clone spack repository"
+        # Clone spack repository
         bash -c "[[ -d /spack/.git ]] && ( cd /spack && git reset --hard ${{ inputs.spack-version }} )  || ( git clone ${{ inputs.spack-repository }} /spack && cd /spack && git checkout ${{ inputs.spack-version }}  )"
         echo "::endgroup::"
 
