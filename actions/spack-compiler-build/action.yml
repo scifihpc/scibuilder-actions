@@ -7,7 +7,7 @@ inputs:
     default: 'https://github.com/spack/spack.git'
   spack-version:
     description: 'Spack version'
-    required: true
+    default: 'develop'
   compiler-name:
     description: 'Name of the compiler'
     required: true
@@ -34,8 +34,11 @@ runs:
       run: |
         # Clone spack repository
 
+        echo "::group::Clone spack repository"
         bash -c "[[ -d /spack/.git ]] && ( cd /spack && git reset --hard ${{ inputs.spack-version }} )  || ( git clone ${{ inputs.spack-repository }} /spack && cd /spack && git checkout ${{ inputs.spack-version }}  )"
+        echo "::endgroup::"
 
+        echo "::group::Activate spack, find system compiler and set up system buildcache"
         # Activate spack
         source /spack/share/spack/setup-env.sh
 
@@ -52,13 +55,17 @@ runs:
         # Create buildcache for compilers
         mkdir -p /buildcache/system
         spack mirror add system_buildcache /buildcache/system
+        echo "::endgroup::"
 
         # List installed packages
+        echo "::group::List installed packages in buildcache"
         spack find
+        echo "::endgroup::"
     - name: Find dependency compiler
       if: "${{ inputs.build-with-package != '' }}"
       shell: bash
       run: |
+        echo "::group::Find dependency compiler "${{ inputs.build-with-package }}
         # Activate spack
         source /spack/share/spack/setup-env.sh
 
@@ -69,9 +76,11 @@ runs:
         bash -c "spack location -i "${{ inputs.build-with-package }}" | xargs spack compiler find"
         bash -c "spack location -i "${{ inputs.build-with-package }}" | xargs -I{} spack compiler find {}/compiler/latest/linux/bin"
         bash -c "spack location -i "${{ inputs.build-with-package }}" | xargs -I{} spack compiler find {}/compiler/latest/linux/bin/intel64"
+        echo "::endgroup::"
     - name: Install compiler
       shell: bash
       run: |
+        echo "::group::Install compiler "${{ inputs.compiler-package }}
         # Activate spack
         source /spack/share/spack/setup-env.sh
 
@@ -92,3 +101,4 @@ runs:
         # Remove buildcache
         source /spack/share/spack/setup-env.sh
         spack mirror remove system_buildcache
+        echo "::endgroup::"
