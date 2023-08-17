@@ -33,7 +33,6 @@ runs:
       shell: bash
       run: |
         echo "::group::Clone spack repository"
-        # Clone spack repository
         bash -c "[[ -d /spack/.git ]] && ( cd /spack && git reset --hard ${{ inputs.spack-version }} )  || ( git clone ${{ inputs.spack-repository }} /spack && cd /spack && git checkout ${{ inputs.spack-version }}  )"
         echo "::endgroup::"
 
@@ -56,7 +55,6 @@ runs:
         spack mirror add system_buildcache /buildcache/system
         echo "::endgroup::"
 
-        # List installed packages
         echo "::group::List installed packages in buildcache"
         spack find
         echo "::endgroup::"
