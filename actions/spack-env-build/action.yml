@@ -87,10 +87,6 @@ runs:
         spack --env-dir ${{ inputs.environment }} buildcache list --allarch
         echo "::endgroup::"
 
-        echo "::group::Print specs for the environment"
-        spack --env-dir ${{ inputs.environment }} spec
-        echo "::endgroup::"
-
         echo "::group::Concretize environment"
         spack --env-dir ${{ inputs.environment }} concretize
         echo "::endgroup::"
