@@ -74,9 +74,6 @@ runs:
         echo "::endgroup::"
 
         echo "::group::Add buildcache for finished packages"
-        # Clean up previous installations from the environment
-        rm -f ${{ inputs.environment }}/spack.lock
-        rm -rf ${{ inputs.environment }}/.spack-env
 
         # Add buildcache for finished packages
         mkdir -p /buildcache/final
