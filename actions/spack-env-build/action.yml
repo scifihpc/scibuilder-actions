@@ -92,6 +92,10 @@ runs:
         spack --env-dir ${{ inputs.environment }} install --no-check-signature
         echo "::endgroup::"
 
+        echo "::group::Refresh Lmod modules"
+        spack --env-dir ${{ inputs.environment }} module lmod refresh --delete-tree --yes
+        echo "::endgroup::"
+
         echo "::group::Push finished products to buildcache"
         # Push finished products to buildcache
         spack --env-dir ${{ inputs.environment }} buildcache push -a -u /buildcache/final
