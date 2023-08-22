@@ -30,6 +30,7 @@ runs:
       shell: bash
       env:
         SPACK_CUSTOMIZATIONS: ${{ inputs.customizations }}
+        SYSTEM_COMPILER: ${{ inputs.system-compiler }}
       run: |
         echo "::group::Clone spack repository"
         bash -c "[[ -d /spack/.git ]] && ( cd /spack && git reset --hard ${{ inputs.spack-version }} )  || ( git clone ${{ inputs.spack-repository }} /spack && cd /spack && git checkout ${{ inputs.spack-version }}  )"
@@ -57,9 +58,7 @@ runs:
         spack mirror add system_buildcache /buildcache/system
         echo "::endgroup::"
 
-        echo "::group::Remove system compiler, add compiler packages and remove system buildcache"
-        # Remove system compiler
-        spack compiler remove ${{ inputs.system-compiler }} 
+        echo "::group::Add compiler packages and remove system buildcache"
 
         # Add compilers packages and search for compilers
         for compiler_package in ${{ inputs.compiler-packages }}
