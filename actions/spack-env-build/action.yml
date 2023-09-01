@@ -32,7 +32,7 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Initialize spack
+    - name: Build environment
       shell: bash
       env:
         SPACK_CUSTOMIZATIONS: ${{ inputs.customizations }}
@@ -114,13 +114,25 @@ runs:
         spack compiler list
         echo "::endgroup::"
 
+        echo "::group::Create a depfile for the environment"
+        spack --env-dir ${{ inputs.environment }} env depfile -o Makefile
+        echo "::endgroup::"
+
         echo "::group::Install and add compilers to the environment"
+
         spack --env-dir ${{ inputs.environment }} compiler find
         for ((i=0; i<$len_names; i++))
         do
           compiler_package=${compiler_packages[i]}
           echo "Adding compiler ${compiler_package}"
-          spack --env-dir ${{ inputs.environment }} install --add --fresh --no-check-signature ${compiler_package}
+
+          compiler_short_name=$(echo "${compiler_package}" | grep -Po '^[^@]+@[A-z0-9-.]+')
+          compiler_short_name=${compiler_short_name//@/-}
+
+          compiler_hash=$(grep -Po "^.*${compiler_short_name}-.*: HASH = (.*)" Makefile | awk '{ print $NF }')
+
+          make "install/${compiler_short_name}-${compiler_hash}" SPACK_INSTALL_FLAGS="--no-check-signature"
+
           bash -c "spack --env-dir ${{ inputs.environment }} location -i ${compiler_package} | xargs spack --env-dir ${{ inputs.environment }} compiler find"
           bash -c "spack --env-dir ${{ inputs.environment }} location -i ${compiler_package} | xargs -I{} spack --env-dir ${{ inputs.environment }} compiler find {}/compiler/latest/linux/bin"
           bash -c "spack --env-dir ${{ inputs.environment }} location -i ${compiler_package} | xargs -I{} spack --env-dir ${{ inputs.environment }} compiler find {}/compiler/latest/linux/bin/intel64"
