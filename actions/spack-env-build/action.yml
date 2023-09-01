@@ -8,6 +8,9 @@ inputs:
   spack-version:
     description: 'Spack version'
     required: true
+  compiler-names:
+    description: 'Compiler names to install'
+    required: true
   compiler-packages:
     description: 'Compiler packages to install'
     required: true
@@ -15,7 +18,10 @@ inputs:
     description: 'System compiler used for building base-compiler'
     required: true
   arch:
-    description: 'System architecture for the base compiler'
+    description: 'System architecture for the compilers (from Spack list of archs)'
+    default: ''
+  os:
+    description: 'OS for the compilers (from Spack list of OS)'
     default: ''
   environment:
     description: 'Environment to build'
@@ -36,45 +42,21 @@ runs:
         bash -c "[[ -d /spack/.git ]] && ( cd /spack && git reset --hard ${{ inputs.spack-version }} )  || ( git clone ${{ inputs.spack-repository }} /spack && cd /spack && git checkout ${{ inputs.spack-version }}  )"
         echo "::endgroup::"
 
-        echo "::group::Activate spack, find system compiler and set up system buildcache"
+        echo "::group::Activate spack and set up bootstrap store"
         # Activate spack
         source /spack/share/spack/setup-env.sh
 
         # Clean misc cache
         spack clean -m
 
-        # Find system compiler
-        spack compiler find
-
-        # Disable default boostrap methods
-        spack bootstrap disable github-actions-v0.4
-        spack bootstrap disable github-actions-v0.3
-
         # Bootstrap cached bootstrap
         spack bootstrap root /buildcache/bootstrap
-        spack bootstrap root
-
-        # Add system buildcache for compilers
-        spack mirror add system_buildcache /buildcache/system
         echo "::endgroup::"
 
-        echo "::group::Add compiler packages and remove system buildcache"
+        echo "::group::Add buildcaches for compilers and finished packages"
+        mkdir -p /buildcache/compilers
+        bash -c "spack --env-dir ${{ inputs.environment }} mirror list | grep -q compiler_buildcache || spack --env-dir ${{ inputs.environment }} mirror add compiler_buildcache /buildcache/compilers"
 
-        # Add compilers packages and search for compilers
-        for compiler_package in ${{ inputs.compiler-packages }}
-        do
-          bash -c "spack location -i ${compiler_package} | xargs spack compiler find"
-          bash -c "spack location -i ${compiler_package} | xargs -I{} spack compiler find {}/compiler/latest/linux/bin"
-          bash -c "spack location -i ${compiler_package} | xargs -I{} spack compiler find {}/compiler/latest/linux/bin/intel64"
-        done
-
-        # Remove system buildcache
-        spack mirror remove system_buildcache
-        echo "::endgroup::"
-
-        echo "::group::Add buildcache for finished packages"
-
-        # Add buildcache for finished packages
         mkdir -p /buildcache/final
         bash -c "spack --env-dir ${{ inputs.environment }} mirror list | grep -q final_buildcache || spack --env-dir ${{ inputs.environment }} mirror add final_buildcache /buildcache/final"
         echo "::endgroup::"
@@ -83,8 +65,75 @@ runs:
         spack --env-dir ${{ inputs.environment }} buildcache list --allarch
         echo "::endgroup::"
 
+        echo "::group::Add mock compiler entries"
+        compiler_names=(${{ inputs.compiler-names }})
+        compiler_packages=(${{ inputs.compiler-packages }})
+
+        len_names=${#compiler_names[@]}
+        len_packages=${#compiler_packages[@]}
+        [[ $len_names -ne $len_packages ]] && echo 'compiler-names and compiler-packages have unequal amount of entries' && exit 1
+
+        rm -f ~/.spack/linux/compilers.yaml
+        spack compiler find
+        for ((i=0; i<$len_names; i++))
+        do
+          compiler_name=${compiler_names[i]}
+          echo "Adding $compiler_name to system compiler list"
+          bash -c "cat << EOF >> ~/.spack/linux/compilers.yaml
+        - compiler:
+            spec: ${compiler_name//@/@=}
+            paths:
+              cc: null
+              cxx: null
+              f77: null
+              fc: null
+            flags: {}
+            operating_system: ${{ inputs.os }}
+            target: x86_64
+            modules: []
+            environment: {}
+            extra_rpaths: []
+        EOF"
+        done
+        echo "Compilers defined:"
+        spack compiler list
+        echo "::endgroup::"
+
         echo "::group::Concretize environment"
-        spack --env-dir ${{ inputs.environment }} concretize
+        spack --env-dir ${{ inputs.environment }} concretize -f
+        echo "::endgroup::"
+
+        echo "::group::Remove mock compiler entries"
+        spack compiler remove ${{ inputs.system-compiler }}
+        for ((i=0; i<$len_names; i++))
+        do
+          compiler_name=${compiler_names[i]}
+          spack compiler remove ${compiler_name}
+        done
+        echo "Compilers defined:"
+        spack compiler list
+        echo "::endgroup::"
+
+        echo "::group::Install and add compilers to the environment"
+        spack --env-dir ${{ inputs.environment }} compiler find
+        for ((i=0; i<$len_names; i++))
+        do
+          compiler_package=${compiler_packages[i]}
+          echo "Adding compiler ${compiler_package}"
+          spack --env-dir ${{ inputs.environment }} install --add --fresh --no-check-signature ${compiler_package}
+          bash -c "spack --env-dir ${{ inputs.environment }} location -i ${compiler_package} | xargs spack --env-dir ${{ inputs.environment }} compiler find"
+          bash -c "spack --env-dir ${{ inputs.environment }} location -i ${compiler_package} | xargs -I{} spack --env-dir ${{ inputs.environment }} compiler find {}/compiler/latest/linux/bin"
+          bash -c "spack --env-dir ${{ inputs.environment }} location -i ${compiler_package} | xargs -I{} spack --env-dir ${{ inputs.environment }} compiler find {}/compiler/latest/linux/bin/intel64"
+        done
+        echo "Compilers defined:"
+        spack --env-dir ${{ inputs.environment }} compiler list
+        echo "::endgroup::"
+
+        echo "::group::Push compilers to buildcache"
+        # Push finished products to buildcache
+        spack --env-dir ${{ inputs.environment }} buildcache push -a -u /buildcache/compilers
+        spack --env-dir ${{ inputs.environment }} buildcache update-index /buildcache/compilers
+        spack --env-dir ${{ inputs.environment }} mirror remove compiler_buildcache
         echo "::endgroup::"
 
         echo "::group::Install environment"
