@@ -162,7 +162,7 @@ runs:
         echo "::endgroup::"
 
         echo "::group::Install environment"
-        spack install --no-check-signature
+        bash -c "spack install --no-check-signature --fail-fast || spack install --no-check-signature --fail-fast --verbose"
         echo "::endgroup::"
 
         echo "::group::Refresh Lmod modules"
