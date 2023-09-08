@@ -78,6 +78,7 @@ runs:
           for ((i=0; i<$len_paths; i++))
           do
             compiler_path=${compiler_paths[i]}
+            echo "Searching compiler from: ${compiler_path}"
             spack compiler find ${compiler_path}
             spack compiler find ${compiler_path}/compiler/latest/linux/bin
             spack compiler find ${compiler_path}/compiler/latest/linux/bin/intel64
