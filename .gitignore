@@ -1,2 +1,2 @@
-example_workflow/.spack-env
-example_workflow/spack.lock
+example_workflows/*/.spack-env
+example_workflows/*/spack.lock

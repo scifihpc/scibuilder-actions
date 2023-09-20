@@ -9,6 +9,7 @@ spack:
     build_language: en_US.utf8
     source_cache: /cache/spack/global/source_cache
     install_missing_compilers: true
+    install_hash_length: 7
   modules:
     default:
       enable:
@@ -20,14 +21,12 @@ spack:
         all:
           autoload: direct
   definitions:
-  - compilers: [gcc@11.3.0, oneapi@2023.1.0]
+  - compilers: [gcc@11.3.1]
   - mpis: [openmpi@4.1.4]
   - mpipackages:
     - hdf5+mpi
     - netcdf-c@4.9.2
   specs:
-  - gcc@11.3.0
-  - intel-oneapi-compilers@2023.1.0%gcc@11.3.0
   - cmake@3.24.3
   - lmod@8.7.2
   - matrix:
@@ -37,4 +36,19 @@ spack:
     - [$mpipackages]
     - [$^mpis]
     - [$%compilers]
-  mirrors: {}
+  mirrors:
+    final_buildcache: /buildcache/final
+  compilers:
+  - compiler:
+      spec: gcc@=11.3.1
+      paths:
+        cc: /usr/bin/gcc
+        cxx: /usr/bin/g++
+        f77: null
+        fc: null
+      flags: {}
+      operating_system: rocky9
+      target: x86_64
+      modules: []
+      environment: {}
+      extra_rpaths: []
