@@ -1,3 +1,4 @@
+---
 # action.yml
 name: 'Scibuilder Spack build'
 description: 'Run Scibuilder Spack build'
@@ -36,145 +37,145 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Build environment
-      shell: bash
-      env:
-        SPACK_CUSTOMIZATIONS: ${{ inputs.customizations }}
-        SYSTEM_COMPILER: ${{ inputs.system-compiler }}
-      run: |
-        echo "::group::Clone spack repository"
-        bash -c "[[ -d /spack/.git ]] && ( cd /spack && git reset --hard ${{ inputs.spack-version }} )  || ( git clone ${{ inputs.spack-repository }} /spack && cd /spack && git checkout ${{ inputs.spack-version }}  )"
-        echo "::endgroup::"
+  - name: Build environment
+    shell: bash
+    env:
+      SPACK_CUSTOMIZATIONS: ${{ inputs.customizations }}
+      SYSTEM_COMPILER: ${{ inputs.system-compiler }}
+    run: |
+      echo "::group::Clone spack repository"
+      bash -c "[[ -d /spack/.git ]] && ( cd /spack && git reset --hard ${{ inputs.spack-version }} )  || ( git clone ${{ inputs.spack-repository }} /spack && cd /spack && git checkout ${{ inputs.spack-version }}  )"
+      echo "::endgroup::"
 
-        echo "::group::Activate spack and set up bootstrap store"
-        source /spack/share/spack/setup-env.sh
+      echo "::group::Activate spack and set up bootstrap store"
+      source /spack/share/spack/setup-env.sh
 
-        # Clean misc cache
-        spack clean -m
+      # Clean misc cache
+      spack clean -m
 
-        spack bootstrap root /buildcache/bootstrap
-        echo "::endgroup::"
+      spack bootstrap root /buildcache/bootstrap
+      echo "::endgroup::"
 
-        echo "::group::Activate environment and create build cache"
-        spack env activate ${{ inputs.environment }}
+      echo "::group::Activate environment and create build cache"
+      spack env activate ${{ inputs.environment }}
 
-        mkdir -p /buildcache/final
-        bash -c "spack mirror list | grep -q final_buildcache || spack mirror add final_buildcache /buildcache/final"
-        echo "::endgroup::"
+      mkdir -p /buildcache/final
+      bash -c "spack mirror list | grep -q final_buildcache || spack mirror add final_buildcache /buildcache/final"
+      echo "::endgroup::"
 
-        echo "::group::List installed packages in buildcache"
-        spack buildcache list --allarch
-        echo "::endgroup::"
+      echo "::group::List installed packages in buildcache"
+      spack buildcache list --allarch
+      echo "::endgroup::"
 
-        echo "::group::Add external compilers from compiler paths"
-        compiler_paths=(${{ inputs.compiler-paths }})
+      echo "::group::Add external compilers from compiler paths"
+      compiler_paths=(${{ inputs.compiler-paths }})
 
-        len_paths=${#compiler_paths[@]}
+      len_paths=${#compiler_paths[@]}
+
+      spack compiler find
+
+      if [[ "${compiler_paths[0]}" != '' ]]
+      then
+        for ((i=0; i<$len_paths; i++))
+        do
+          compiler_path=${compiler_paths[i]}
+          echo "Searching compiler from: ${compiler_path}"
+          spack compiler find ${compiler_path}
+          spack compiler find ${compiler_path}/compiler/latest/linux/bin
+          spack compiler find ${compiler_path}/compiler/latest/linux/bin/intel64
+        done
+      fi
+      echo "Compilers defined:"
+      spack compiler list
+      echo "::endgroup::"
+
+      echo "::group::Add mock compiler entries if compilers are missing"
+      compiler_names=(${{ inputs.compiler-names }})
+      compiler_packages=(${{ inputs.compiler-packages }})
+
+      len_names=${#compiler_names[@]}
+      len_packages=${#compiler_packages[@]}
+      [[ $len_names -ne $len_packages ]] && echo 'compiler-names and compiler-packages have unequal amount of entries' && exit 1
+
+      if [[ "${compiler_packages[0]}" != '' ]]
+      then
+        bash -c "echo 'compilers:' > ~/.spack/linux/compilers.yaml"
+        for ((i=0; i<$len_names; i++))
+        do
+          compiler_name=${compiler_names[i]}
+          echo "Adding $compiler_name to system compiler list"
+          bash -c "cat << EOF >> ~/.spack/linux/compilers.yaml
+      - compiler:
+          spec: ${compiler_name//@/@=}
+          paths:
+            cc: null
+            cxx: null
+            f77: null
+            fc: null
+          flags: {}
+          operating_system: ${{ inputs.os }}
+          target: x86_64
+          modules: []
+          environment: {}
+          extra_rpaths: []
+      EOF"
+        done
+      fi
+      echo "Compilers defined:"
+      spack compiler list
+      echo "::endgroup::"
+
+      echo "::group::Concretize environment"
+      spack concretize -f
+      echo "::endgroup::"
+
+      echo "::group::Install compilers to the environment one by one"
+      if [[ "${compiler_packages[0]}" != '' ]]
+      then
+
+        rm -f ~/.spack/linux/compilers.yaml
 
         spack compiler find
 
-        if [[ "${compiler_paths[0]}" != '' ]]
-        then
-          for ((i=0; i<$len_paths; i++))
-          do
-            compiler_path=${compiler_paths[i]}
-            echo "Searching compiler from: ${compiler_path}"
-            spack compiler find ${compiler_path}
-            spack compiler find ${compiler_path}/compiler/latest/linux/bin
-            spack compiler find ${compiler_path}/compiler/latest/linux/bin/intel64
-          done
-        fi
-        echo "Compilers defined:"
-        spack compiler list
-        echo "::endgroup::"
+        [[ -f Makefile ]] && rm Makefile
+        spack env depfile -o Makefile
 
-        echo "::group::Add mock compiler entries if compilers are missing"
-        compiler_names=(${{ inputs.compiler-names }})
-        compiler_packages=(${{ inputs.compiler-packages }})
+        for ((i=0; i<$len_names; i++))
+        do
+          compiler_package=${compiler_packages[i]}
+          echo "Adding compiler ${compiler_package}"
 
-        len_names=${#compiler_names[@]}
-        len_packages=${#compiler_packages[@]}
-        [[ $len_names -ne $len_packages ]] && echo 'compiler-names and compiler-packages have unequal amount of entries' && exit 1
+          compiler_short_name=$(echo "${compiler_package}" | grep -Po '^[^@]+@[A-z0-9-.]+')
+          compiler_short_name=${compiler_short_name//@/-}
 
-        if [[ "${compiler_packages[0]}" != '' ]]
-        then
-          bash -c "echo 'compilers:' > ~/.spack/linux/compilers.yaml"
-          for ((i=0; i<$len_names; i++))
-          do
-            compiler_name=${compiler_names[i]}
-            echo "Adding $compiler_name to system compiler list"
-            bash -c "cat << EOF >> ~/.spack/linux/compilers.yaml
-        - compiler:
-            spec: ${compiler_name//@/@=}
-            paths:
-              cc: null
-              cxx: null
-              f77: null
-              fc: null
-            flags: {}
-            operating_system: ${{ inputs.os }}
-            target: x86_64
-            modules: []
-            environment: {}
-            extra_rpaths: []
-        EOF"
-          done
-        fi
-        echo "Compilers defined:"
-        spack compiler list
-        echo "::endgroup::"
+          compiler_hash=$(grep -Po "^.*${compiler_short_name}-.*: HASH = (.*)" Makefile | awk '{ print $NF }')
 
-        echo "::group::Concretize environment"
-        spack concretize -f
-        echo "::endgroup::"
+          make "install/${compiler_short_name}-${compiler_hash}" SPACK_INSTALL_FLAGS="--no-check-signature"
 
-        echo "::group::Install compilers to the environment one by one"
-        if [[ "${compiler_packages[0]}" != '' ]]
-        then
+          bash -c "spack location -i ${compiler_package} | xargs spack compiler find"
+          bash -c "spack location -i ${compiler_package} | xargs -I{} spack compiler find {}/compiler/latest/linux/bin"
+          bash -c "spack location -i ${compiler_package} | xargs -I{} spack compiler find {}/compiler/latest/linux/bin/intel64"
+        done
+      fi
+      echo "::endgroup::"
 
-          rm -f ~/.spack/linux/compilers.yaml
+      echo "Compilers defined:"
+      spack --env-dir ${{ inputs.environment }} compiler list
+      echo "::endgroup::"
 
-          spack compiler find
+      echo "::group::Install environment"
+      bash -c "spack install --no-check-signature --fail-fast || spack install --no-check-signature --fail-fast --verbose"
+      echo "::endgroup::"
 
-          [[ -f Makefile ]] && rm Makefile
-          spack env depfile -o Makefile
+      echo "::group::Refresh Lmod modules"
+      spack module lmod refresh --delete-tree --yes
+      echo "::endgroup::"
 
-          for ((i=0; i<$len_names; i++))
-          do
-            compiler_package=${compiler_packages[i]}
-            echo "Adding compiler ${compiler_package}"
+      echo "::group::Push finished products to buildcache"
+      spack buildcache push -a -u /buildcache/final
 
-            compiler_short_name=$(echo "${compiler_package}" | grep -Po '^[^@]+@[A-z0-9-.]+')
-            compiler_short_name=${compiler_short_name//@/-}
+      # Update buildcache index
+      spack buildcache update-index /buildcache/final
 
-            compiler_hash=$(grep -Po "^.*${compiler_short_name}-.*: HASH = (.*)" Makefile | awk '{ print $NF }')
-
-            make "install/${compiler_short_name}-${compiler_hash}" SPACK_INSTALL_FLAGS="--no-check-signature"
-
-            bash -c "spack location -i ${compiler_package} | xargs spack compiler find"
-            bash -c "spack location -i ${compiler_package} | xargs -I{} spack compiler find {}/compiler/latest/linux/bin"
-            bash -c "spack location -i ${compiler_package} | xargs -I{} spack compiler find {}/compiler/latest/linux/bin/intel64"
-          done
-        fi
-        echo "::endgroup::"
-
-        echo "Compilers defined:"
-        spack --env-dir ${{ inputs.environment }} compiler list
-        echo "::endgroup::"
-
-        echo "::group::Install environment"
-        bash -c "spack install --no-check-signature --fail-fast || spack install --no-check-signature --fail-fast --verbose"
-        echo "::endgroup::"
-
-        echo "::group::Refresh Lmod modules"
-        spack module lmod refresh --delete-tree --yes
-        echo "::endgroup::"
-
-        echo "::group::Push finished products to buildcache"
-        spack buildcache push -a -u /buildcache/final
-
-        # Update buildcache index
-        spack buildcache update-index /buildcache/final
-
-        spack mirror remove final_buildcache
-        echo "::endgroup::"
+      spack mirror remove final_buildcache
+      echo "::endgroup::"

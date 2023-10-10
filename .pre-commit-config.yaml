@@ -1,0 +1,11 @@
+repos:
+- repo: https://github.com/adrienverge/yamllint
+  rev: v1.32.0
+  hooks:
+  - id: yamllint
+- repo: https://github.com/igorshubovych/markdownlint-cli.git
+  rev: v0.37.0
+  hooks:
+  - id: markdownlint
+    # Allow long lines
+    args: [--disable, MD013, --]

@@ -1,41 +1,41 @@
+---
 name: scibuilder-actions example workflow
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+    - "main"
 
 env:
   SPACK_VERSION: v0.20.1
-  PODMAN_SOCKET: unix:///run/docker.sock
 
 jobs:
-
   spack-env-build:
-    runs-on: self-hosted
 
+    # Matrix can be used to build multiple environments
     strategy:
-      fail-fast: true
-      max-parallel: 1
       matrix:
         spack-env:
-          - environment: "$GITHUB_WORKSPACE/example_workflows/spack-single-env"
-            customizations: ./rocky9.yaml
+        - environment: "$GITHUB_WORKSPACE/example_workflows/spack-single-env"
+          customizations: ./rocky9.yaml
 
+    # Run the action on self-hosted machine
+    runs-on: self-hosted
     container:
       image: docker.io/aaltoscienceit/scibuilder-actions:rocky9
       volumes:
-        - spack-single-env-spack:/spack
-        - cache:/cache
-        - buildcache:/buildcache
-        - spack-single-env-envs:/appl
+      - spack-single-env-spack:/spack
+      - cache:/cache
+      - buildcache:/buildcache
+      - spack-single-env-envs:/appl
 
     steps:
-      - uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
-      - uses: ./actions/spack-env-build
-        with:
-          spack-version: ${{ env.SPACK_VERSION }}
-          environment: ${{ matrix.spack-env.environment }}
-          customizations: ${{ matrix.spack-env.customizations }}
-          system-compiler: gcc@11.3.1
-          os: rocky9
+    - uses: ./actions/spack-env-build
+      with:
+        spack-version: ${{ env.SPACK_VERSION }}
+        environment: ${{ matrix.spack-env.environment }}
+        customizations: ${{ matrix.spack-env.customizations }}
+        system-compiler: gcc@11.3.1
+        os: rocky9
