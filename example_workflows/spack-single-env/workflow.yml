@@ -32,7 +32,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: ./actions/spack-env-build
+    - uses: scifihpc/scibuilder-actions/actions/spack-env-build@v0.1.0
       with:
         spack-version: ${{ env.SPACK_VERSION }}
         environment: ${{ matrix.spack-env.environment }}
