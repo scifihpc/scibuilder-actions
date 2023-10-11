@@ -39,6 +39,23 @@ There are also these optional input variables:
 - `customizations`: Optional customizations file to spack environments.
   See customizations section for more information.
 
+### Use in workflow
+
+An example workflow is provided in
+[here](example_workflows/spack-single-env/workflow.yml).
+
+Typically, the actions looks something like this:
+
+```yml
+  - uses: scifihpc/scibuilder-actions/actions/spack-env-build@v0.1.0
+    with:
+      spack-version: v0.20.1
+      environment: "$GITHUB_WORKSPACE/my-spack-environment-folder"
+      customizations: "my-site-specific-customizations.yml"
+      system-compiler: gcc@11.3.1
+      os: rocky9
+```
+
 ## Development setup
 
 A developer setup is described in [this document](dev/development-setup.md).
