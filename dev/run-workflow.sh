@@ -16,15 +16,37 @@ If branch is not specified, the script will use the current branch of the reposi
 EOF
 }
 
+RUNTIME="podman"
+ROOTLESS=0
+
 for ARG in "$@"
   do
   case $ARG in
     -h|--help)
+    shift
     usage
     exit 0
     ;;
+    -d|--docker)
+    RUNTIME=docker
+    shift
+    ;;
+    -r|--no-rootless)
+    ROOTLESS=1
+    shift
+    ;;
   esac
 done
+
+[[ "$ROOTLESS" -ne 0 ]] && echo 'baa'
+[[ "$ROOTLESS" -ne 1 ]] && echo 'boo'
+
+if [[ "$ROOTLESS" -eq 0 ]] && [[ "$RUNTIME" == "podman" ]]
+then
+  PODMAN_SOCKET=$XDG_RUNTIME_DIR/podman/podman.sock
+  export DOCKER_HOST=unix://$PODMAN_SOCKET
+  ACT_CONTAINER_SOCKET="--container-daemon-socket $PODMAN_SOCKET"
+fi
 
 if [[ "$#" -lt 1 ]] ; then
   echo "Error: No workflow file given!"
@@ -67,8 +89,6 @@ EOF
 
 trap "rm $EVENTFILE" EXIT
 
-export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
-
 echo "Running workflow \"$WORKFLOW\" with push from branch $BRANCH"
 
-time act push -b --container-daemon-socket $XDG_RUNTIME_DIR/podman/podman.sock -P self-hosted=docker.io/catthehacker/ubuntu:act-22.04 -W $WORKFLOW -e $EVENTFILE
+time act push -b $ACT_CONTAINER_SOCKET -P self-hosted=docker.io/catthehacker/ubuntu:act-22.04 -W $WORKFLOW -e $EVENTFILE
