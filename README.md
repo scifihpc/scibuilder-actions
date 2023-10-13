@@ -36,8 +36,9 @@ There are also these optional input variables:
   or `intel-oneapi-compilers@2023.1.0`) to install before installing rest of
   the environment. Whitespace delimited list. Must have equal length to
   `compiler-names`
-- `customizations`: Optional customizations file to spack environments.
-  See customizations section for more information.
+- `env-vars`: Optional environment variables set during build process
+  (e.g. `SPACK_CUSTOMIZATIONS=./rocky9.yaml`). Can be used to include
+  branch / site specific customizations to spack environments.
 
 ### Use in workflow
 

@@ -17,7 +17,7 @@ jobs:
       matrix:
         spack-env:
         - environment: "$GITHUB_WORKSPACE/example_workflows/spack-single-env"
-          customizations: ./rocky9.yaml
+          env-vars: SPACK_CUSTOMIZATIONS=./rocky9.yaml
 
     # Run the action on self-hosted machine
     runs-on: self-hosted
@@ -32,10 +32,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: scifihpc/scibuilder-actions/actions/spack-env-build@v0.1.0
+    - uses: ./actions/spack-env-build
       with:
         spack-version: ${{ env.SPACK_VERSION }}
         environment: ${{ matrix.spack-env.environment }}
-        customizations: ${{ matrix.spack-env.customizations }}
+        env-vars: ${{ matrix.spack-env.env-vars }}
         system-compiler: gcc@11.3.1
         os: rocky9
