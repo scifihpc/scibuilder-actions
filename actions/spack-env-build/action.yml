@@ -40,7 +40,7 @@ runs:
   - name: Build environment
     shell: bash
     run: |
-      EXTRA_ENV_VARS=${{ inputs.env-vars }}
+      EXTRA_ENV_VARS="${{ inputs.env-vars }}"
       if [[ ! -z "$EXTRA_ENV_VARS" ]]
       then
         echo "::group::Setting extra environment variables"
