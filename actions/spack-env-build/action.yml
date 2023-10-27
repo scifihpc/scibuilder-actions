@@ -173,10 +173,6 @@ runs:
       bash -c "spack install --no-check-signature --fail-fast || spack install --no-check-signature --fail-fast --verbose"
       echo "::endgroup::"
 
-      echo "::group::Refresh Lmod modules"
-      spack module lmod refresh --delete-tree --yes
-      echo "::endgroup::"
-
       echo "::group::Push finished products to buildcache"
       spack buildcache push -a -u /buildcache/final
 
@@ -184,4 +180,8 @@ runs:
       spack buildcache update-index /buildcache/final
 
       spack mirror remove final_buildcache
+      echo "::endgroup::"
+
+      echo "::group::Refresh Lmod modules"
+      spack module lmod refresh --delete-tree --yes
       echo "::endgroup::"
