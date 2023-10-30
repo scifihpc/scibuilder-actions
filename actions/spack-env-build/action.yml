@@ -70,7 +70,7 @@ runs:
       echo "::endgroup::"
 
       echo "::group::List installed packages in buildcache"
-      spack buildcache list --allarch
+      spack buildcache list --allarch --long --variants
       echo "::endgroup::"
 
       echo "::group::Add external compilers from compiler paths"
