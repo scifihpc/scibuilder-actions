@@ -46,6 +46,11 @@ runs:
   - name: Build environment
     shell: bash
     run: |
+
+      echo "::group::Increasing ulimit"
+      ulimit -Sn 65536
+      echo "::endgroup::"
+
       EXTRA_ENV_VARS="${{ inputs.env-vars }}"
       if [[ ! -z "$EXTRA_ENV_VARS" ]]
       then
@@ -101,7 +106,6 @@ runs:
       spack compiler list
       echo "::endgroup::"
 
-      echo "::group::Add mock compiler entries if compilers are missing"
       compiler_names=(${{ inputs.compiler-names }})
       compiler_packages=(${{ inputs.compiler-packages }})
 
@@ -111,6 +115,7 @@ runs:
 
       if [[ "${compiler_packages[0]}" != '' ]]
       then
+        echo "::group::Add mock compiler entries if compilers are missing"
         bash -c "echo 'compilers:' > ~/.spack/linux/compilers.yaml"
         for ((i=0; i<$len_names; i++))
         do
@@ -132,19 +137,19 @@ runs:
           extra_rpaths: []
       EOF"
         done
+        echo "Compilers defined:"
+        spack compiler list
+        echo "::endgroup::"
       fi
-      echo "Compilers defined:"
-      spack compiler list
-      echo "::endgroup::"
 
       echo "::group::Concretize environment"
       spack concretize -f
       echo "::endgroup::"
 
-      echo "::group::Install compilers to the environment one by one"
       if [[ "${compiler_packages[0]}" != '' ]]
       then
 
+        echo "::group::Install compilers to the environment one by one"
         rm -f ~/.spack/linux/compilers.yaml
 
         spack compiler find
@@ -169,15 +174,11 @@ runs:
           bash -c "spack location -i ${compiler_package} | xargs -I{} spack compiler find {}/compiler/latest/linux/bin"
           bash -c "spack location -i ${compiler_package} | xargs -I{} spack compiler find {}/compiler/latest/linux/bin/intel64"
         done
+        echo "::endgroup::"
       fi
-      echo "::endgroup::"
 
       echo "Compilers defined:"
       spack --env-dir ${{ inputs.environment }} compiler list
-      echo "::endgroup::"
-
-      echo "::group::Concretize environment again"
-      spack concretize -f
       echo "::endgroup::"
 
       MAKEFILE_BUILD="${{ inputs.makefile-build }}"
