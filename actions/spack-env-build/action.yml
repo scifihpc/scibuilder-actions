@@ -175,16 +175,18 @@ runs:
       spack --env-dir ${{ inputs.environment }} compiler list
       echo "::endgroup::"
 
-      echo "::group::Install environment"
       MAKEFILE_BUILD="${{ inputs.makefile-build }}"
-      if [[ -z "$MAKEFILE_BUILD" ]]
+      if [[ ! -z "$MAKEFILE_BUILD" ]]
       then
+        echo "::group::Install environment with Makefile"
         spack env depfile -o Makefile
         make -j "${{ inputs.njobs }}" SPACK_INSTALL_FLAGS="--no-check-signature"
+        echo "::endgroup::"
       else
+        echo "::group::Install environment"
         bash -c "spack install -j ${{ inputs.njobs }} --no-check-signature --fail-fast || spack install --no-check-signature --fail-fast --verbose"
+        echo "::endgroup::"
       fi
-      echo "::endgroup::"
 
       echo "::group::Refresh Lmod modules"
       spack module lmod refresh --delete-tree --yes
