@@ -162,7 +162,7 @@ runs:
 
           compiler_hash=$(grep -Po "^.*${compiler_short_name}-.*: HASH = (.*)" Makefile | awk '{ print $NF }')
 
-          make "install/${compiler_short_name}-${compiler_hash}" SPACK_INSTALL_FLAGS="--no-check-signature"
+          make -j ${{ inputs.njobs }} "install/${compiler_short_name}-${compiler_hash}" SPACK_INSTALL_FLAGS="--no-check-signature"
 
           bash -c "spack location -i ${compiler_package} | xargs spack compiler find"
           bash -c "spack location -i ${compiler_package} | xargs -I{} spack compiler find {}/compiler/latest/linux/bin"
