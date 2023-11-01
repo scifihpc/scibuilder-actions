@@ -40,6 +40,9 @@ inputs:
   njobs:
     description: 'Number of jobs for building'
     default: 16
+  ulimit:
+    description: 'Number of files that can be opened by ulimit'
+    default: 65536
 runs:
   using: 'composite'
   steps:
@@ -48,7 +51,7 @@ runs:
     run: |
 
       echo "::group::Increasing ulimit"
-      ulimit -Sn 65536
+      ulimit -Sn ${{ inputs.ulimit }}
       echo "::endgroup::"
 
       EXTRA_ENV_VARS="${{ inputs.env-vars }}"
