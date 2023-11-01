@@ -56,7 +56,7 @@ runs:
       fi
 
       echo "::group::Clone spack repository"
-      bash -c "[[ -d /spack/.git ]] && ( cd /spack && git reset --hard ${{ inputs.spack-version }} )  || ( cd /spack && git init && git remote add origin ${{ inputs.spack-repository }} && git fetch --tags origin && git checkout origin/${{ inputs.spack-version }} )"
+      bash -c "[[ -d /spack/.git ]] && ( cd /spack && git reset --hard ${{ inputs.spack-version }} )  || ( cd /spack && git init && git remote add origin ${{ inputs.spack-repository }} && git fetch --tags origin && git checkout ${{ inputs.spack-version }} )"
       echo "::endgroup::"
 
       echo "::group::Activate spack and set up bootstrap store"
