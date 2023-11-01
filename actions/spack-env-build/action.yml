@@ -175,6 +175,10 @@ runs:
       spack --env-dir ${{ inputs.environment }} compiler list
       echo "::endgroup::"
 
+      echo "::group::Concretize environment again"
+      spack concretize -f
+      echo "::endgroup::"
+
       MAKEFILE_BUILD="${{ inputs.makefile-build }}"
       if [[ ! -z "$MAKEFILE_BUILD" ]]
       then
