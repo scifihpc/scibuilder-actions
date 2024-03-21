@@ -1,5 +1,5 @@
 ---
-name: example-env
+name: example-env_2024-01
 channels:
 - conda-forge
 dependencies:

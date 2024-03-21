@@ -14,7 +14,10 @@ inputs:
     required: true
   hash-length:
     description: 'Hash length for environments'
-    default: 8
+    default: 7
+  version-separator:
+    description: 'Character that separates the name of the module from the version in the name field'
+    default: '_'
   micromamba:
     description: 'Micromamba download url'
     default: 'https://micro.mamba.pm/api/micromamba/linux-64/latest'
@@ -26,6 +29,10 @@ runs:
     env:
       SPACK_CUSTOMIZATIONS: ${{ inputs.customizations }}
     run: |
+      # Set global vars
+      export MAIN_DIR=`pwd`
+      SEP=${{ inputs.version-separator }}
+
       echo "::group::Obtain micromamba and yq"
       mkdir -p /mamba
 
@@ -37,13 +44,50 @@ runs:
 
       export PATH=/mamba/bin:$PATH
 
-      echo "::group::Sort environment files with yq"
+      echo "::group::Sort environment files with yq and create sha256 checksums"
       for YML_FILE in `find "${{ inputs.environments-folder }}" -regex '.*\.y[a]*ml'`
       do
-        yq --inplace eval '(... | select(type == "!!seq")) |= sort' $YML_FILE
-        md5sum $YML_FILE > $YML_FILE.md5sum
+        YML_FILE_DIR=`dirname $YML_FILE`
+        YML_FILE_NAME=`basename $YML_FILE`
+        echo "Processing ${YML_FILE_NAME}"
+
+        cd $YML_FILE_DIR
+
+        yq --inplace eval '(... | select(type == "!!seq")) |= sort' $YML_FILE_NAME
+        sha256sum $YML_FILE_NAME > $YML_FILE_NAME.sha256sum
+
+        cd $MAIN_DIR
       done
       echo "::endgroup::"
 
-      echo "::group::Obtain micromamba and yq"
+      echo "::group::Creating installation folders"
+      mkdir -p
+      echo "::endgroup::"
+      echo "::group::Install environements"
+      for YML_FILE in `find "${{ inputs.environments-folder }}" -regex '.*\.y[a]*ml'`
+      do
+        YML_FILE_NAME=`basename $YML_FILE`
+        echo "Processing ${YML_FILE_NAME}"
+
+        FULLNAME=`yq ".name" $YML_FILE`
+        NAME=`echo ${FULLNAME} | cut -f 1 -d "${SEP}"`
+        VERSION=`echo ${FULLNAME} | cut -f 2 -d "${SEP}"`
+        HASH_SHORT=`head -c ${{ inputs.hash-length }} $YML_FILE.sha256sum`
+        INSTALL_FOLDER="${{ inputs.install-folder }}/${NAME}/${VERSION}/${HASH_SHORT}"
+
+        if [[ -f "${INSTALL_FOLDER}/${YML_FILE_NAME}" ]]
+        then
+          diff -q ${INSTALL_FOLDER}/${YML_FILE_NAME} ${YML_FILE} &> /dev/null
+          DIFF_RESULT=$?
+          if [[ $DIFF_RESULT -eq 0 ]]
+          then
+            echo "Environment ${NAME}/${VERSION} already exists in ${INSTALL_FOLDER}"
+            continue
+          fi
+        fi
+        echo "Installing ${NAME}/${VERSION} to ${INSTALL_FOLDER}"
+
+        #cp $YML_FILE $YML_FILE.sha256sum ${INSTALL_FOLDER}
+
+      done
       echo "::endgroup::"
