@@ -39,6 +39,10 @@ There are also these optional input variables:
 - `env-vars`: Optional environment variables set during build process
   (e.g. `SPACK_CUSTOMIZATIONS=./rocky9.yaml`). Can be used to include
   branch / site specific customizations to spack environments.
+- `makefile-build`: Use Spack's Makefile for parallel building (experimental).
+- `buildcache-install`: Only install from buildcache. Useful for deploying software.
+- `njobs`: Number of jobs for building. Default is 16.
+- `ulimit`: Number of files that can be opened. Set by ulimit. Default is 65536.
 
 ### Use in workflow
 

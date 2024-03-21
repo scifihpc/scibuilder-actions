@@ -37,6 +37,9 @@ inputs:
   makefile-build:
     description: "Use Spack's Makefile for parallel building"
     default: ''
+  buildcache-install:
+    description: "Only install from buildcache"
+    default: ''
   njobs:
     description: 'Number of jobs for building'
     default: 16
@@ -185,16 +188,24 @@ runs:
       spack --env-dir ${{ inputs.environment }} compiler list
       echo "::endgroup::"
 
+      BUILDCACHE_INSTALL="${{ inputs.buildcache-install }}"
+      if [[ ! -z "BUILDCACHE_INSTALL" ]]
+      then
+          buildcache_args="--use-buildcache only"
+      else
+          buildcache_args=""
+      fi
+
       MAKEFILE_BUILD="${{ inputs.makefile-build }}"
       if [[ ! -z "$MAKEFILE_BUILD" ]]
       then
         echo "::group::Install environment with Makefile"
         spack env depfile -o Makefile
-        make -j "${{ inputs.njobs }}" SPACK_INSTALL_FLAGS="--no-check-signature"
+        make -j "${{ inputs.njobs }}" SPACK_INSTALL_FLAGS="--no-check-signature ${buildcache_args}"
         echo "::endgroup::"
       else
         echo "::group::Install environment"
-        bash -c "spack install -j ${{ inputs.njobs }} --no-check-signature --fail-fast || spack install --no-check-signature --fail-fast --verbose"
+        bash -c "spack install -j ${{ inputs.njobs }} ${buildcache_args} --no-check-signature --fail-fast || spack install ${buildcache_args} --no-check-signature --fail-fast --verbose"
         echo "::endgroup::"
       fi
 
