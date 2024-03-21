@@ -1,0 +1,13 @@
+---
+name: example-env
+channels:
+- conda-forge
+dependencies:
+- pip:
+  - jax
+  - pytorch
+- absl
+- numpy
+- pip
+- python
+- scipy

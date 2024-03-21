@@ -1,0 +1,49 @@
+---
+# action.yml
+name: 'Scibuilder mamba build'
+description: 'Run Scibuilder Spack build'
+inputs:
+  install-folder:
+    description: 'Installation prefix'
+    required: true
+  module-folder:
+    description: 'Modulefile prefix'
+    required: true
+  environments-folder:
+    description: 'Folder of environments'
+    required: true
+  hash-length:
+    description: 'Hash length for environments'
+    default: 8
+  micromamba:
+    description: 'Micromamba download url'
+    default: 'https://micro.mamba.pm/api/micromamba/linux-64/latest'
+runs:
+  using: 'composite'
+  steps:
+  - name: Create environment
+    shell: bash
+    env:
+      SPACK_CUSTOMIZATIONS: ${{ inputs.customizations }}
+    run: |
+      echo "::group::Obtain micromamba and yq"
+      mkdir -p /mamba
+
+      bash -c "[[ -f /mamba/bin/micromamba ]] || (curl -Ls ${{ inputs.micromamba }} | tar -C /mamba -xvj bin/micromamba )"
+
+      # Obtain yq
+      bash -c "[[ -f /mamba/bin/yq ]] || wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /mamba/bin/yq && chmod +x /mamba/bin/yq"
+      echo "::endgroup::"
+
+      export PATH=/mamba/bin:$PATH
+
+      echo "::group::Sort environment files with yq"
+      for YML_FILE in `find "${{ inputs.environments-folder }}" -regex '.*\.y[a]*ml'`
+      do
+        yq --inplace eval '(... | select(type == "!!seq")) |= sort' $YML_FILE
+        md5sum $YML_FILE > $YML_FILE.md5sum
+      done
+      echo "::endgroup::"
+
+      echo "::group::Obtain micromamba and yq"
+      echo "::endgroup::"
