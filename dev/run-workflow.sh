@@ -38,9 +38,6 @@ for ARG in "$@"
   esac
 done
 
-[[ "$ROOTLESS" -ne 0 ]] && echo 'baa'
-[[ "$ROOTLESS" -ne 1 ]] && echo 'boo'
-
 if [[ "$ROOTLESS" -eq 0 ]] && [[ "$RUNTIME" == "podman" ]]
 then
   PODMAN_SOCKET=$XDG_RUNTIME_DIR/podman/podman.sock
