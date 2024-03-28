@@ -5,7 +5,10 @@ channels:
 dependencies:
 - pip:
   - torch
+- conda
+- mamba
 - numpy
+- pandas
 - pip
 - python
 - scipy

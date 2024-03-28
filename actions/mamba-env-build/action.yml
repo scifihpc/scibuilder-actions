@@ -133,15 +133,31 @@ runs:
 
         micromamba create -y -f $YML_FILE -p ${INSTALL_FOLDER}
 
-        echo "Copying environment file and checksum to ${INSTALL_FOLDER}"
-        cp $YML_FILE ${INSTALL_FOLDER}/${YML_FILE_NAME}
-        cp $YML_FILE.sha256sum ${INSTALL_FOLDER}/${YML_FILE_NAME}.sha256sum
-
         echo "Cleaning up pip wheel cache"
         rm -rf ~/.cache/pip/wheels
 
-        MODULE_FOLDER="${{ inputs.module-folder }}/${NAME}/${VERSION}/${HASH_SHORT}"
+        MODULE_FOLDER="${{ inputs.module-folder }}/${NAME}"
 
+        mkdir -p $MODULE_FOLDER
+
+        echo "Creating modulefile for environment ${NAME}/${VERSION}"
+        cat << EOF > ${MODULE_FOLDER}/${VERSION}.lua
+      -- -*- lua -*-"
+      --
+      -- Module file created by scibuilder
+      --
+
+      whatis([[Name : ${NAME}]])
+      whatis([[Version : ${VERSION}]])
+      help([[This is an automatically created Python environment.]])
+
+      prepend_path("PATH", "${INSTALL_FOLDER}/bin")
+      setenv("CONDA_PREFIX", "${INSTALL_FOLDER}")
+      EOF
+
+        echo "Copying environment file and checksum to ${INSTALL_FOLDER}"
+        cp $YML_FILE ${INSTALL_FOLDER}/${YML_FILE_NAME}
+        cp $YML_FILE.sha256sum ${INSTALL_FOLDER}/${YML_FILE_NAME}.sha256sum
 
       done
       echo "::endgroup::"
