@@ -191,7 +191,7 @@ runs:
       BUILDCACHE_INSTALL="${{ inputs.buildcache-install }}"
       if [[ ! -z "$BUILDCACHE_INSTALL" ]]
       then
-          buildcache_args="--use-buildcache only --include-build-deps"
+          buildcache_args="--use-buildcache package:only,dependencies:only --include-build-deps"
       else
           buildcache_args=""
       fi
