@@ -4,9 +4,7 @@ channels:
 - conda-forge
 dependencies:
 - pip:
-  - jax
-  - pytorch
-- absl
+  - torch
 - numpy
 - pip
 - python

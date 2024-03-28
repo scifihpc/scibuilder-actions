@@ -21,6 +21,9 @@ inputs:
   micromamba:
     description: 'Micromamba download url'
     default: 'https://micro.mamba.pm/api/micromamba/linux-64/latest'
+  cuda-override:
+    description: 'Value of CONDA_OVERRIDE_CUDA'
+    default: '12.1'
 runs:
   using: 'composite'
   steps:
@@ -60,10 +63,28 @@ runs:
       done
       echo "::endgroup::"
 
-      echo "::group::Creating installation folders"
-      mkdir -p
+      echo "::group::Setting cache directory configuration"
+      echo "Configuring mamba to use /cache/mamba/pkgs for pkgs_dirs"
+      mkdir -p /cache/mamba/pkgs
+      micromamba config prepend pkgs_dirs /cache/mamba/pkgs
+      echo "Configuring pip to use local cache for http and http-v2 caches"
+      rm -rf ~/.cache/pip
+      mkdir -p ~/.cache/pip
+      mkdir -p /cache/pip/{http,http-v2}
+      ln -s /cache/pip/http ~/.cache/pip/http
+      ln -s /cache/pip/http-v2 ~/.cache/pip/http-v2
       echo "::endgroup::"
-      echo "::group::Install environements"
+
+      echo "::group::Setting CUDA override"
+      export CONDA_OVERRIDE_CUDA="${{ inputs.cuda-override }}"
+      echo "CONDA_OVERRIDE_CUDA=${CONDA_OVERRIDE_CUDA}"
+      echo "::endgroup::"
+
+      echo "::group::Creating installation folders"
+      mkdir -p "${{ inputs.install-folder }}"
+      echo "::endgroup::"
+
+      echo "::group::Installing environments"
       for YML_FILE in `find "${{ inputs.environments-folder }}" -regex '.*\.y[a]*ml'`
       do
         YML_FILE_NAME=`basename $YML_FILE`
@@ -72,22 +93,55 @@ runs:
         FULLNAME=`yq ".name" $YML_FILE`
         NAME=`echo ${FULLNAME} | cut -f 1 -d "${SEP}"`
         VERSION=`echo ${FULLNAME} | cut -f 2 -d "${SEP}"`
+        if [[ "$NAME" == "$VERSION" ]]
+        then
+          echo "Cannot determine version from environment name: ${FULLNAME}"
+          echo "Expected environment name to be in format: NAME${SEP}VERSION"
+          exit 1
+        fi
         HASH_SHORT=`head -c ${{ inputs.hash-length }} $YML_FILE.sha256sum`
         INSTALL_FOLDER="${{ inputs.install-folder }}/${NAME}/${VERSION}/${HASH_SHORT}"
 
-        if [[ -f "${INSTALL_FOLDER}/${YML_FILE_NAME}" ]]
+        if [[ "${INSTALL_FOLDER}" =~ ' ' ]]
         then
-          diff -q ${INSTALL_FOLDER}/${YML_FILE_NAME} ${YML_FILE} &> /dev/null
-          DIFF_RESULT=$?
-          if [[ $DIFF_RESULT -eq 0 ]]
+          echo "Installation folder should not contain spaces: \"${INSTALL_FOLDER}\""
+          exit 1
+        fi
+
+        if [[ -d "${INSTALL_FOLDER}" ]]
+        then
+          if [[ -f "${INSTALL_FOLDER}/${YML_FILE_NAME}" ]]
           then
-            echo "Environment ${NAME}/${VERSION} already exists in ${INSTALL_FOLDER}"
-            continue
+            diff -q ${INSTALL_FOLDER}/${YML_FILE_NAME} ${YML_FILE} &> /dev/null
+            DIFF_RESULT=$?
+            if [[ $DIFF_RESULT -eq 0 ]]
+            then
+              echo "Environment ${NAME}/${VERSION} already exists in ${INSTALL_FOLDER}"
+              continue
+            else
+              echo "Environment ${NAME}/${VERSION} already exists in ${INSTALL_FOLDER}, but the environment file does not match the one given."
+              exit 1
+            fi
+          else
+            echo "Failed installation directory found in \"${INSTALL_FOLDER}\"."
+            echo "Removing it and starting a fresh installation."
+            rm -rf "${INSTALL_FOLDER}"
           fi
         fi
+
         echo "Installing ${NAME}/${VERSION} to ${INSTALL_FOLDER}"
 
-        #cp $YML_FILE $YML_FILE.sha256sum ${INSTALL_FOLDER}
+        micromamba create -y -f $YML_FILE -p ${INSTALL_FOLDER}
+
+        echo "Copying environment file and checksum to ${INSTALL_FOLDER}"
+        cp $YML_FILE ${INSTALL_FOLDER}/${YML_FILE_NAME}
+        cp $YML_FILE.sha256sum ${INSTALL_FOLDER}/${YML_FILE_NAME}.sha256sum
+
+        echo "Cleaning up pip wheel cache"
+        rm -rf ~/.cache/pip/wheels
+
+        MODULE_FOLDER="${{ inputs.module-folder }}/${NAME}/${VERSION}/${HASH_SHORT}"
+
 
       done
       echo "::endgroup::"
