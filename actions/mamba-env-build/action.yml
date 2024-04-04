@@ -24,6 +24,18 @@ inputs:
   cuda-override:
     description: 'Value of CONDA_OVERRIDE_CUDA'
     default: '12.1'
+  lmod-dir:
+    description: 'Directory where Lmod is installed. Set to LMOD_DIR in interactive shells.'
+    default: '/usr/share/lmod/lmod/libexec'
+  lmod-replace-name:
+    description: 'String that will be replaced with the name in custom modules'
+    default: '__name__'
+  lmod-replace-version:
+    description: 'String that will be replaced with the version in custom modules'
+    default: '__version__'
+  lmod-replace-prefix:
+    description: 'String that will be replaced with the installation prefix in custom modules'
+    default: '__prefix__'
 runs:
   using: 'composite'
   steps:
@@ -84,11 +96,10 @@ runs:
       mkdir -p "${{ inputs.install-folder }}"
       echo "::endgroup::"
 
-      echo "::group::Installing environments"
       for YML_FILE in `find "${{ inputs.environments-folder }}" -regex '.*\.y[a]*ml'`
       do
         YML_FILE_NAME=`basename $YML_FILE`
-        echo "Processing ${YML_FILE_NAME}"
+        echo "::group::Installing environment from ${YML_FILE_NAME}"
 
         FULLNAME=`yq ".name" $YML_FILE`
         NAME=`echo ${FULLNAME} | cut -f 1 -d "${SEP}"`
@@ -108,6 +119,7 @@ runs:
           exit 1
         fi
 
+        INSTALL_ENV=0
         if [[ -d "${INSTALL_FOLDER}" ]]
         then
           if [[ -f "${INSTALL_FOLDER}/${YML_FILE_NAME}" ]]
@@ -117,7 +129,7 @@ runs:
             if [[ $DIFF_RESULT -eq 0 ]]
             then
               echo "Environment ${NAME}/${VERSION} already exists in ${INSTALL_FOLDER}"
-              continue
+              INSTALL_ENV=1
             else
               echo "Environment ${NAME}/${VERSION} already exists in ${INSTALL_FOLDER}, but the environment file does not match the one given."
               exit 1
@@ -129,19 +141,34 @@ runs:
           fi
         fi
 
-        echo "Installing ${NAME}/${VERSION} to ${INSTALL_FOLDER}"
+        echo $INSTALL_ENV
+        if [[ "${INSTALL_ENV}" -eq 0 ]]
+        then
+          echo "Installing ${NAME}/${VERSION} to ${INSTALL_FOLDER}"
 
-        micromamba create -y -f $YML_FILE -p ${INSTALL_FOLDER}
+          micromamba create -y -f $YML_FILE -p ${INSTALL_FOLDER}
 
-        echo "Cleaning up pip wheel cache"
-        rm -rf ~/.cache/pip/wheels
+          echo "Cleaning up pip wheel cache"
+          rm -rf ~/.cache/pip/wheels
+        fi
 
         MODULE_FOLDER="${{ inputs.module-folder }}/${NAME}"
 
         mkdir -p $MODULE_FOLDER
 
-        echo "Creating modulefile for environment ${NAME}/${VERSION}"
-        cat << EOF > ${MODULE_FOLDER}/${VERSION}.lua
+        CUSTOM_MODULE_NAME=${YML_FILE/.yml/.lua}
+        CUSTOM_MODULE_NAME=${CUSTOM_MODULE_NAME/.yaml/.lua}
+
+        if [[ -f "${CUSTOM_MODULE_NAME}" ]]
+        then
+          echo "Creating modulefile for environment ${NAME}/${VERSION} from custom module file"
+          cp ${CUSTOM_MODULE_NAME} ${MODULE_FOLDER}/${VERSION}.lua
+          sed -i "s:${{ inputs.lmod-replace-name }}:${NAME}:g" ${MODULE_FOLDER}/${VERSION}.lua
+          sed -i "s:${{ inputs.lmod-replace-version }}:${VERSION}:g" ${MODULE_FOLDER}/${VERSION}.lua
+          sed -i "s:${{ inputs.lmod-replace-prefix }}:${INSTALL_FOLDER}:g" ${MODULE_FOLDER}/${VERSION}.lua
+        else
+          echo "Creating modulefile for environment ${NAME}/${VERSION}"
+          cat << EOF > ${MODULE_FOLDER}/${VERSION}.lua
       -- -*- lua -*-"
       --
       -- Module file created by scibuilder
@@ -154,10 +181,15 @@ runs:
       prepend_path("PATH", "${INSTALL_FOLDER}/bin")
       setenv("CONDA_PREFIX", "${INSTALL_FOLDER}")
       EOF
+        fi
+
+        echo "::group::Verifying module directory"
+        ${{ inputs.lmod-dir }}/check_module_tree_syntax ${{ inputs.module-folder }}
+        echo "::endgroup::"
 
         echo "Copying environment file and checksum to ${INSTALL_FOLDER}"
         cp $YML_FILE ${INSTALL_FOLDER}/${YML_FILE_NAME}
         cp $YML_FILE.sha256sum ${INSTALL_FOLDER}/${YML_FILE_NAME}.sha256sum
+        echo "::endgroup::"
 
       done
-      echo "::endgroup::"

@@ -1,0 +1,30 @@
+---
+name: scibuilder-actions mamba example workflow
+
+on:
+  push:
+    branches: ["main"]
+
+env:
+  SPACK_VERSION: v0.20.1
+
+jobs:
+
+  mamba-env-build:
+    runs-on: self-hosted
+
+    container:
+      image: docker.io/aaltoscienceit/scibuilder-actions:rocky9
+      volumes:
+      - mamba:/mamba
+      - mamba-appl:/appl/mamba
+      - cache:/cache
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: ./actions/mamba-env-build
+      with:
+        install-folder: "/appl/mamba/software"
+        module-folder: "/appl/mamba/modules"
+        environments-folder: "$GITHUB_WORKSPACE/example_workflows/mamba-custom-module/environments"

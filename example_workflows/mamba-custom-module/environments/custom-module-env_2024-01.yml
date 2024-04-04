@@ -1,0 +1,14 @@
+---
+name: custom-module-env_2024-01
+channels:
+- conda-forge
+dependencies:
+- pip:
+  - torch
+- conda
+- mamba
+- numpy
+- pandas
+- pip
+- python
+- scipy
