@@ -141,7 +141,6 @@ runs:
           fi
         fi
 
-        echo $INSTALL_ENV
         if [[ "${INSTALL_ENV}" -eq 0 ]]
         then
           echo "Installing ${NAME}/${VERSION} to ${INSTALL_FOLDER}"
