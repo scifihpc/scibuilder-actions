@@ -1,8 +1,15 @@
+---
 repos:
 - repo: https://github.com/adrienverge/yamllint
   rev: v1.32.0
   hooks:
-  - id: yamllint
+  - name: yamllint-generic
+    id: yamllint
+    exclude: '^example_workflows/mamba.*$'
+  - name: yamllint-mamba
+    id: yamllint
+    args: ['-c', '.yamllint-mamba']
+    files: '^example_workflows/mamba_.*/.*.y[a]?ml$'
 - repo: https://github.com/igorshubovych/markdownlint-cli.git
   rev: v0.37.0
   hooks:

@@ -1,14 +1,14 @@
 ---
 name: example-env_2024-01
 channels:
-- conda-forge
+  - conda-forge
 dependencies:
-- pip:
-  - torch
-- conda
-- mamba
-- numpy
-- pandas
-- pip
-- python
-- scipy
+  - pip:
+      - torch
+  - conda
+  - mamba
+  - numpy
+  - pandas
+  - pip
+  - python
+  - scipy
