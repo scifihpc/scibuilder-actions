@@ -64,6 +64,13 @@ RUN dnf install -y                     \
   && dnf clean all                     \
   && rm -rf /var/cache/yum
 
+# Add apptainer
+
+RUN dnf install -y                     \
+  apptainer                            \
+  && dnf clean all                     \
+  && rm -rf /var/cache/yum
+
 # Create folders used by scibuilder-actions
 RUN mkdir /appl
 RUN mkdir /spack
