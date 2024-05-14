@@ -147,6 +147,11 @@ runs:
 
           micromamba create -y -f $YML_FILE -p ${INSTALL_FOLDER}
 
+          echo "Exporting realized env file to ${INSTALL_FOLDER}"
+
+          micromamba env export --no-build -p ${INSTALL_FOLDER} > ${INSTALL_FOLDER}/${YML_FILE_NAME}.lock
+          micromamba env export -p ${INSTALL_FOLDER} > ${INSTALL_FOLDER}/${YML_FILE_NAME}.build-lock
+
           echo "Cleaning up pip wheel cache"
           rm -rf ~/.cache/pip/wheels
         fi
@@ -179,6 +184,8 @@ runs:
 
       prepend_path("PATH", "${INSTALL_FOLDER}/bin")
       setenv("CONDA_PREFIX", "${INSTALL_FOLDER}")
+
+      setenv("CONDA_ENVIRONMENT_YML", "${INSTALL_FOLDER}/${YML_FILE_NAME}")
       EOF
         fi
 
