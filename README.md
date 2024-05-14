@@ -8,6 +8,9 @@ The following actions are currently supported:
 - [spack-env-build](./actions/spack-env-build/action.yml) - Installs spack
   environments. To use compilers from another environment, see instructions
   below.
+- [mamba-env-build](./actions/mamba-env-build/action.yml) - Installs conda
+  environments with
+  [micromamba](https://mamba.readthedocs.io/en/latest/user_guide/micromamba.html).
 
 All actions are described in detail below.
 
@@ -44,12 +47,12 @@ There are also these optional input variables:
 - `njobs`: Number of jobs for building. Default is 16.
 - `ulimit`: Number of files that can be opened. Set by ulimit. Default is 65536.
 
-### Use in workflow
+### Using spack-env-build in a workflow
 
 An example workflow is provided in
 [here](example_workflows/spack-single-env/workflow.yml).
 
-Typically, the actions looks something like this:
+Typically, the action looks something like this:
 
 ```yml
   - uses: scifihpc/scibuilder-actions/actions/spack-env-build@v0.1.0
@@ -59,6 +62,44 @@ Typically, the actions looks something like this:
       customizations: "my-site-specific-customizations.yml"
       system-compiler: gcc@11.3.1
       os: rocky9
+```
+
+## mamba-env-build
+
+- `install-folder`: Folder where environments should be installed.
+- `module-folder`: Folder where Lmod module files should be installed.
+- `environments-folder`: Folder that contains the environment .yml-files that
+- the actions should build.
+- `hash-length`: Number of characters from the environment hash that are used
+- in the installation folder name. Default is `7`.
+- `version-separator`: Character that separates the name of the module from
+- the version in the environment's name-field. Default is `'_'`.
+- `micromamba`: Micromamba download URL.
+- Default is https://micro.mamba.pm/api/micromamba/linux-64/latest
+- `cuda-override`: Value of CONDA_OVERRIDE_CUDA. Default is `12.1`.
+- `lmod-dir`: Directory where Lmod is installed. Set to LMOD_DIR in
+- interactive shells. This is used when testing for any problems in custom
+- module files Default is `/usr/share/lmod/lmod/libexec`.
+- `lmod-replace-name`: String that will be replaced with the name in custom
+- modules
+- `lmod-replace-version`: String that will be replaced with the version in
+- custom modules
+- `lmod-replace-prefix`: String that will be replaced with the installation
+- prefix in custom modules
+
+### Using mamba-env-build in a workflow
+
+An example workflow is provided in
+[here](example_workflows/mamba-single-env/workflow.yml).
+
+Typically, the action looks something like this:
+
+```yml
+    - uses: ./actions/mamba-env-build
+      with:
+        install-folder: "/appl/mamba/software"
+        module-folder: "/appl/mamba/modules"
+        environments-folder: "$GITHUB_WORKSPACE/example_workflows/mamba-single-env/environments"
 ```
 
 ## Development setup

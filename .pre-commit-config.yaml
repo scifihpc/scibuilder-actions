@@ -15,4 +15,4 @@ repos:
   hooks:
   - id: markdownlint
     # Allow long lines
-    args: [--disable, MD013, --]
+    args: [--disable, MD013, MD034, --]
