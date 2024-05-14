@@ -28,3 +28,4 @@ jobs:
         install-folder: "/appl/mamba/software"
         module-folder: "/appl/mamba/modules"
         environments-folder: "$GITHUB_WORKSPACE/example_workflows/mamba-single-env/environments"
+        freeze-file: "$GITHUB_WORKSPACE/example_workflows/mamba-single-env/environments/freeze.txt"
