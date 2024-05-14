@@ -74,7 +74,7 @@ else
   BRANCH=$2
 fi
 
-EVENTFILE=$(mktemp --suffix -push-$BRANCH.json)
+EVENTFILE=$(mktemp --suffix -push-${BRANCH/\//_}.json)
 
 cat > $EVENTFILE << EOF
 {
