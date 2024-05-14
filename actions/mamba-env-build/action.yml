@@ -1,7 +1,7 @@
 ---
 # action.yml
 name: 'Scibuilder mamba build'
-description: 'Run Scibuilder Spack build'
+description: 'Run Scibuilder Mamba build'
 inputs:
   install-folder:
     description: 'Installation prefix'
@@ -16,7 +16,7 @@ inputs:
     description: 'Hash length for environments'
     default: 7
   version-separator:
-    description: 'Character that separates the name of the module from the version in the name field'
+    description: "Character that separates the name of the module from the version in the environment's name-field"
     default: '_'
   micromamba:
     description: 'Micromamba download url'
@@ -110,8 +110,13 @@ runs:
           echo "Expected environment name to be in format: NAME${SEP}VERSION"
           exit 1
         fi
-        HASH_SHORT=`head -c ${{ inputs.hash-length }} $YML_FILE.sha256sum`
-        INSTALL_FOLDER="${{ inputs.install-folder }}/${NAME}/${VERSION}/${HASH_SHORT}"
+
+        INSTALL_FOLDER="${{ inputs.install-folder }}/${NAME}/${VERSION}"
+        if [[ ${{ inputs.hash-length }} -gt 0 ]]
+        then
+          HASH_SHORT=`head -c ${{ inputs.hash-length }} $YML_FILE.sha256sum`
+          INSTALL_FOLDER="${INSTALL_FOLDER}/${HASH_SHORT}"
+        fi
 
         if [[ "${INSTALL_FOLDER}" =~ ' ' ]]
         then
