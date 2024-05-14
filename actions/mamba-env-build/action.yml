@@ -50,7 +50,7 @@ runs:
       # Set global vars
       export MAIN_DIR=`pwd`
       SEP=${{ inputs.version-separator }}
-      FREEZE_FILE=`realpath -q ${{ inputs.freeze-file }}`
+      FREEZE_FILE="${{ inputs.freeze-file }}"
 
       echo "::group::Obtain micromamba and yq"
       mkdir -p /mamba
