@@ -1,0 +1,31 @@
+---
+name: scibuilder-actions apptainer example workflow with custom module template
+
+on:
+  push:
+    branches: ["main"]
+
+env:
+  SPACK_VERSION: v0.20.1
+
+jobs:
+
+  apptainer-env-build:
+    runs-on: self-hosted
+
+    container:
+      image: docker.io/aaltoscienceit/scibuilder-actions:rocky9
+      volumes:
+      - apptainer-appl:/appl/apptainer
+      - cache:/cache
+      - apptainer:/apptainer
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: ./actions/apptainer-build
+      with:
+        install-folder: "/appl/apptainer/software"
+        module-folder: "/appl/apptainer/modules"
+        definitions-folder: "$GITHUB_WORKSPACE/example_workflows/apptainer-module-template/definitions"
+        lmod-module-template: "$GITHUB_WORKSPACE/example_workflows/apptainer-module-template/definitions/default.lua"
