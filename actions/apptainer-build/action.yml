@@ -52,6 +52,7 @@ runs:
         curl -s https://raw.githubusercontent.com/apptainer/apptainer/main/tools/install-unprivileged.sh | \
         bash -s - /apptainer
       fi
+      echo "::endgroup::"
 
       echo "::group::Create sha256 checksums from definition files"
       for DEF_FILE in `find "${{ inputs.definitions-folder }}" -regex '.*\.def'`
@@ -135,7 +136,9 @@ runs:
           mkdir -p ${INSTALL_FOLDER}
           /apptainer/bin/apptainer build ${IMAGE_PATH} ${DEF_FILE}
         fi
+        echo "::endgroup::"
 
+        echo "::group::Installing lmod module"
         MODULE_FOLDER="${{ inputs.module-folder }}/${NAME}"
 
         mkdir -p $MODULE_FOLDER
@@ -178,6 +181,7 @@ runs:
       setenv("IMAGE_PATH", "${IMAGE_PATH}")
       EOF
         fi
+        echo "::endgroup::"
 
         echo "::group::Verifying module directory"
         ${{ inputs.lmod-dir }}/check_module_tree_syntax ${{ inputs.module-folder }}
