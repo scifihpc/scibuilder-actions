@@ -138,7 +138,7 @@ runs:
         fi
         echo "::endgroup::"
 
-        echo "::group::Installing lmod module"
+        echo "::group::Installing lmod module for ${NAME}/${VERSION}"
         MODULE_FOLDER="${{ inputs.module-folder }}/${NAME}"
 
         mkdir -p $MODULE_FOLDER
