@@ -69,9 +69,9 @@ runs:
       echo "::endgroup::"
 
       echo "::group::Setting cache directory configuration"
-      echo 'Configuring apptainer to use /cache for $APPTAINER_CACHEDIR'
-      mkdir -p /cache
-      export APPTAINER_CACHEDIR=/cache
+      echo 'Configuring apptainer to use /cache/apptainer for $APPTAINER_CACHEDIR'
+      mkdir -p /cache/apptainer
+      export APPTAINER_CACHEDIR=/cache/apptainer
       echo "::endgroup::"
 
       echo "::group::Creating installation folders"
