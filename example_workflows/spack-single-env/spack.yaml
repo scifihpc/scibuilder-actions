@@ -1,26 +1,32 @@
----
 spack:
-  include:
-  - ${SPACK_CUSTOMIZATIONS}
-  view: false
-  concretizer:
-    unify: when_possible
-    reuse: dependencies
-  config:
-    build_language: en_US.utf8
-    source_cache: /cache/spack/global/source_cache
-    install_missing_compilers: true
-    install_hash_length: 7
   modules:
     default:
       enable:
       - lmod
+      roots:
+        lmod: /appl/scibuilder-spack/single-env/lmod
       lmod:
+        core_compilers:
+        - gcc@11.3.1
         hash_length: 0
         hierarchy:
         - mpi
         all:
           autoload: direct
+  config:
+    build_language: en_US.utf8
+    install_missing_compilers: true
+    install_hash_length: 7
+    install_tree:
+      root: /appl/scibuilder-spack/single-env/software
+    misc_cache: /cache/spack/single-env/misc_cache
+    source_cache: /cache/spack/global/source_cache
+    build_stage:
+    - /stage/spack/single-env
+  view: false
+  concretizer:
+    unify: when_possible
+    reuse: dependencies
   definitions:
   - compilers: [gcc@11.3.1]
   - mpis: [openmpi@4.1.4]
@@ -37,3 +43,18 @@ spack:
     - [$mpipackages]
     - [$^mpis]
     - [$%compilers]
+  mirrors: {}
+  compilers:
+  - compiler:
+      spec: gcc@=11.3.1
+      paths:
+        cc: /usr/bin/gcc
+        cxx: /usr/bin/g++
+        f77: /usr/bin/gfortran
+        fc: /usr/bin/gfortran
+      flags: {}
+      operating_system: rocky9
+      target: x86_64
+      modules: []
+      environment: {}
+      extra_rpaths: []

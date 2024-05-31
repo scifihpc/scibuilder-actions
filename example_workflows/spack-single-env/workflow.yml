@@ -12,13 +12,6 @@ env:
 jobs:
   spack-env-build:
 
-    # Matrix can be used to build multiple environments
-    strategy:
-      matrix:
-        spack-env:
-        - environment: "$GITHUB_WORKSPACE/example_workflows/spack-single-env"
-          env-vars: SPACK_CUSTOMIZATIONS=./rocky9.yaml
-
     # Run the action on self-hosted machine
     runs-on: self-hosted
     container:
@@ -35,7 +28,6 @@ jobs:
     - uses: ./actions/spack-env-build
       with:
         spack-version: ${{ env.SPACK_VERSION }}
-        environment: ${{ matrix.spack-env.environment }}
-        env-vars: ${{ matrix.spack-env.env-vars }}
+        environment: "$GITHUB_WORKSPACE/example_workflows/spack-single-env"
         system-compiler: gcc@11.3.1
         os: rocky9
