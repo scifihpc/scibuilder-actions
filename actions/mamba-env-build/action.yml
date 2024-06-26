@@ -175,6 +175,15 @@ runs:
           rm -rf ~/.cache/pip/wheels
         fi
 
+        CUSTOM_CONDARC_NAME=${YML_FILE/.yml/.condarc}
+        CUSTOM_CONDARC_NAME=${CUSTOM_CONDARC_NAME/.yaml/.condarc}
+
+        if [[ -f "${CUSTOM_CONDARC_NAME}" ]]
+        then
+          echo "Adding custom condarc to environment ${NAME}/${VERSION}"
+          cp ${CUSTOM_CONDARC_NAME} ${INSTALL_FOLDER}/condarc
+        fi
+
         MODULE_FOLDER="${{ inputs.module-folder }}/${NAME}"
 
         mkdir -p $MODULE_FOLDER
@@ -206,6 +215,14 @@ runs:
 
       setenv("CONDA_ENVIRONMENT_YML", "${INSTALL_FOLDER}/${YML_FILE_NAME}")
       EOF
+        fi
+
+        CUSTOM_MODULE_ADDITIONS_NAME=${YML_FILE/.yml/.lua_additions}
+        CUSTOM_MODULE_ADDITIONS_NAME=${CUSTOM_MODULE_ADDITIONS_NAME/.yaml/.lua_additions}
+        if [[ -f "${CUSTOM_MODULE_ADDITIONS_NAME}" ]]
+        then
+          echo "Adding custom additions to module ${NAME}/${VERSION}"
+          cat ${CUSTOM_MODULE_ADDITIONS_NAME} >> ${MODULE_FOLDER}/${VERSION}.lua
         fi
 
         echo "::group::Verifying module directory"
