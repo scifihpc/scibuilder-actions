@@ -1,0 +1,28 @@
+---
+modules:
+  default:
+    enable:
+    - lmod
+    roots:
+      lmod: /appl/scibuilder-spack/spack-custom-compiler/lmod
+    lmod:
+      core_compilers:
+      - gcc@11.3.1
+      hash_length: 0
+      hierarchy:
+      - mpi
+      all:
+        autoload: direct
+config:
+  build_language: en_US.utf8
+  install_hash_length: 7
+  install_tree:
+    root: /appl/scibuilder-spack/spack-custom-compiler/software
+  misc_cache: /cache/spack/spack-custom-compiler/misc_cache
+  source_cache: /cache/spack/global/source_cache
+  build_stage:
+  - /stage/spack/spack-custom-compiler
+view: false
+concretizer:
+  unify: when_possible
+  reuse: dependencies

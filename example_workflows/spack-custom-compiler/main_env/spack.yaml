@@ -1,0 +1,29 @@
+spack:
+  include:
+  - ../common.yaml
+  packages:
+    cmake:
+      require:
+      - '%gcc@11.3.1'
+  definitions:
+  - base_packages:
+    - cmake
+  - system_compiler: [gcc@11.3.1]
+  - compilers: [gcc@11.4.0]
+  - mpis: [openmpi@4.1.4]
+  - mpipackages:
+    - hdf5+mpi
+    - netcdf-c@4.9.2
+  specs:
+  - gcc@11.4.0 %gcc@11.3.1 ^gcc-runtime@11.3.1%gcc@11.3.1
+  - matrix:
+    - [$base_packages]
+    - [$%system_compiler]
+  - matrix:
+    - [$mpis]
+    - [$%compilers]
+  - matrix:
+    - [$mpipackages]
+    - [$^mpis]
+    - [$%compilers]
+  mirrors: {}

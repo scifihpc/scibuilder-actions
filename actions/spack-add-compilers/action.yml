@@ -1,0 +1,152 @@
+---
+# action.yml
+name: 'Spack add compilers'
+description: 'Add compilers to spack configuration'
+inputs:
+  spack-location:
+    description: 'Location where repository will be cloned into'
+    default: /spack
+  system-compiler:
+    description: 'Whether to add system compiler'
+    default: ''
+  compiler-paths:
+    description: 'External ompiler paths to add to the environment'
+    default: ''
+  compiler-packages:
+    description: 'Already installed compiler packages that will be added'
+    default: ''
+  mock-compilers:
+    description: 'Mock compiler entries that should be added to compilers'
+    default: ''
+  os:
+    description: 'Operating system for the mock compiler entries'
+    required: false
+    default: ''
+  environment:
+    description: 'Environment to activate when searching for compiler packages'
+    default: ''
+  config-scope:
+    description: 'Configuration scope for the compilers'
+    default: user
+runs:
+  using: 'composite'
+  steps:
+  - name: Add compilers
+    shell: bash
+    run: |
+
+      echo "::group::Activate spack"
+      SPACK_LOCATION=${{ inputs.spack-location }}
+      source ${SPACK_LOCATION}/share/spack/setup-env.sh
+      echo "::endgroup::"
+
+      echo "::group::Setting configuration scope"
+      CONFIG_SCOPE=${{ inputs.config-scope }}
+      case $CONFIG_SCOPE in
+        user)
+          CONFIG_FILE=~/.spack/compilers.yaml
+          ;;
+        system)
+          CONFIG_FILE=/etc/spack/compilers.yaml
+          ;;
+        site)
+          CONFIG_FILE=${SPACK_LOCATION}/etc/spack/compilers.yaml
+          ;;
+        environment)
+          CONFIG_FILE=/dev/null
+          ;;
+      esac
+      echo "Working with configuration scope \"${CONFIG_SCOPE}\""
+      echo "Mock compiler entries will be written to ${CONFIG_FILE}"
+      echo "::endgroup::"
+
+      if [[ "${{ inputs.environment }}" != '' ]]
+      then
+        echo "::group::Activate environment"
+        spack env activate ${{ inputs.environment }}
+        echo "::endgroup::"
+      fi
+
+      if [[ "${{ inputs.system-compiler }}" != '' ]]
+      then
+        echo "::group::Searching for compilers"
+        echo "Searching for system compilers"
+        spack compiler find --scope ${CONFIG_SCOPE}
+        echo "::endgroup::"
+      fi
+
+      compiler_paths=(${{ inputs.compiler-paths }})
+      len_paths=${#compiler_paths[@]}
+
+      if [[ "${compiler_paths[0]}" != '' ]]
+      then
+        echo "::group::Add external compilers from compiler paths"
+        for ((i=0; i<$len_paths; i++))
+        do
+          compiler_path=${compiler_paths[i]}
+          echo "Searching compiler from: ${compiler_path}"
+          spack compiler find --scope ${CONFIG_SCOPE} ${compiler_path}
+          spack compiler find --scope ${CONFIG_SCOPE} ${compiler_path}/compiler/latest/linux/bin
+          spack compiler find --scope ${CONFIG_SCOPE} ${compiler_path}/compiler/latest/linux/bin/intel64
+        done
+      fi
+
+      compiler_packages=(${{ inputs.compiler-packages }})
+      len_packages=${#compiler_packages[@]}
+
+      if [[ "${compiler_packages[0]}" != '' ]]
+      then
+
+        echo "::group::Adding compilers from compiler packages"
+
+        spack compiler find --scope ${CONFIG_SCOPE}
+
+        [[ -f Makefile ]] && rm Makefile
+        spack env depfile -o Makefile
+
+        for ((i=0; i<$len_packages; i++))
+        do
+          compiler_package=${compiler_packages[i]}
+          echo "Adding compiler ${compiler_package}"
+
+          bash -c "spack location -i ${compiler_package} | xargs spack compiler find --scope ${CONFIG_SCOPE}"
+          bash -c "spack location -i ${compiler_package} | xargs -I{} spack compiler find --scope ${CONFIG_SCOPE} {}/compiler/latest/bin"
+          bash -c "spack location -i ${compiler_package} | xargs -I{} spack compiler find --scope ${CONFIG_SCOPE} {}/compiler/latest/linux/bin"
+          bash -c "spack location -i ${compiler_package} | xargs -I{} spack compiler find --scope ${CONFIG_SCOPE} {}/compiler/latest/linux/bin/intel64"
+        done
+        echo "::endgroup::"
+      fi
+
+      mock_compilers=(${{ inputs.mock-compilers }})
+      len_names=${#mock_compilers[@]}
+
+      if [[ "${mock_compilers[0]}" != '' ]]
+      then
+        echo "::group::Adding mock compiler entries"
+        for ((i=0; i<$len_names; i++))
+        do
+          compiler_name=${mock_compilers[i]}
+          echo "Adding $compiler_name to system compiler list"
+          bash -c "cat << EOF >> ${CONFIG_FILE}
+      - compiler:
+          spec: ${compiler_name//@/@=}
+          paths:
+            cc: null
+            cxx: null
+            f77: null
+            fc: null
+          flags: {}
+          operating_system: ${{ inputs.os }}
+          target: x86_64
+          modules: []
+          environment: {}
+          extra_rpaths: []
+      EOF"
+        done
+        echo "::endgroup::"
+
+      fi
+
+      echo "Compilers defined:"
+      spack compiler list
+      echo "::endgroup::"

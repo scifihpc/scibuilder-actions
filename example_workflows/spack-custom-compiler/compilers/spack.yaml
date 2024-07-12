@@ -1,0 +1,7 @@
+spack:
+  include:
+  - ../common.yaml
+  specs:
+  - gcc@11.4.0 %gcc@11.3.1
+  - intel-oneapi-compilers@2024.1.0 %gcc@11.3.1
+  mirrors: {}

@@ -1,0 +1,26 @@
+---
+# action.yml
+name: 'Spack clone repo'
+description: 'Clone spack repository'
+inputs:
+  spack-location:
+    description: 'Location where repository will be cloned into'
+    default: /spack
+  spack-repository:
+    description: 'Spack repository to use'
+    default: 'https://github.com/spack/spack.git'
+  spack-version:
+    description: 'Spack version'
+    default: origin/develop
+runs:
+  using: 'composite'
+  steps:
+  - name: Clone spack repository
+    shell: bash
+    run: |
+
+      echo "::group::Clone spack repository"
+      SPACK_LOCATION=${{ inputs.spack-location }}
+      mkdir -p ${SPACK_LOCATION}
+      bash -c "[[ -d ${SPACK_LOCATION}/.git ]] && ( cd ${SPACK_LOCATION} && git reset --hard ${{ inputs.spack-version }} )  || ( cd ${SPACK_LOCATION} && git init && git remote add origin ${{ inputs.spack-repository }} && git fetch --tags origin && git checkout ${{ inputs.spack-version }} )"
+      echo "::endgroup::"
