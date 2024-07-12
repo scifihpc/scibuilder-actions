@@ -86,4 +86,4 @@ then
   exit 1
 fi
 
-$RUNTIME run $VOLUMES --entrypoint=/bin/bash -it ${IMAGE}
+$RUNTIME run $VOLUMES --entrypoint=/bin/bash -it --rm ${IMAGE}
