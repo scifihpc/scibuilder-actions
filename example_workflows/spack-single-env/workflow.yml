@@ -7,7 +7,7 @@ on:
     - "main"
 
 env:
-  SPACK_VERSION: v0.20.1
+  SPACK_VERSION: v0.22.1
 
 jobs:
   spack-env-build:
@@ -17,6 +17,7 @@ jobs:
     container:
       image: docker.io/aaltoscienceit/scibuilder-actions:rocky9
       volumes:
+      - spack-single-env-root:/root
       - spack-single-env-spack:/spack
       - cache:/cache
       - buildcache:/buildcache
@@ -25,9 +26,16 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: ./actions/spack-env-build
+    - uses: ./actions/spack-clone-repo
       with:
         spack-version: ${{ env.SPACK_VERSION }}
-        environment: "$GITHUB_WORKSPACE/example_workflows/spack-single-env"
+
+    - name: Add system compiler and mock compilers
+      uses: ./actions/spack-add-compilers
+      with:
         system-compiler: gcc@11.3.1
-        os: rocky9
+
+    - name: Build environment
+      uses: ./actions/spack-env-build
+      with:
+        environment: "$GITHUB_WORKSPACE/example_workflows/spack-single-env"

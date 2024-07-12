@@ -15,7 +15,6 @@ spack:
           autoload: direct
   config:
     build_language: en_US.utf8
-    install_missing_compilers: true
     install_hash_length: 7
     install_tree:
       root: /appl/scibuilder-spack/single-env/software
@@ -29,13 +28,13 @@ spack:
     reuse: dependencies
   definitions:
   - compilers: [gcc@11.3.1]
-  - mpis: [openmpi@4.1.4]
+  - mpis: [openmpi@4.1.6]
   - mpipackages:
     - hdf5+mpi
     - netcdf-c@4.9.2
   specs:
-  - cmake@3.24.3
-  - lmod@8.7.2
+  - cmake@3.27.9
+  - lmod@8.7.24
   - matrix:
     - [$mpis]
     - [$%compilers]
@@ -44,17 +43,3 @@ spack:
     - [$^mpis]
     - [$%compilers]
   mirrors: {}
-  compilers:
-  - compiler:
-      spec: gcc@=11.3.1
-      paths:
-        cc: /usr/bin/gcc
-        cxx: /usr/bin/g++
-        f77: /usr/bin/gfortran
-        fc: /usr/bin/gfortran
-      flags: {}
-      operating_system: rocky9
-      target: x86_64
-      modules: []
-      environment: {}
-      extra_rpaths: []
