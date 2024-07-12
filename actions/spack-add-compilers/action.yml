@@ -86,6 +86,7 @@ runs:
           compiler_path=${compiler_paths[i]}
           echo "Searching compiler from: ${compiler_path}"
           spack compiler find --scope ${CONFIG_SCOPE} ${compiler_path}
+          spack compiler find --scope ${CONFIG_SCOPE} ${compiler_path}/compiler/latest/bin
           spack compiler find --scope ${CONFIG_SCOPE} ${compiler_path}/compiler/latest/linux/bin
           spack compiler find --scope ${CONFIG_SCOPE} ${compiler_path}/compiler/latest/linux/bin/intel64
         done
