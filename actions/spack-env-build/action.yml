@@ -27,6 +27,9 @@ inputs:
   buildcache-install:
     description: "Only install from buildcache"
     default: ''
+  buildcache-flags:
+    description: "Extra flags for the buildcache push"
+    default: '--unsigned --private'
   njobs:
     description: 'Number of jobs for building'
     default: 16
@@ -150,7 +153,7 @@ runs:
       echo "::endgroup::"
 
       echo "::group::Push finished products to buildcache"
-      spack buildcache push -a -u ${BUILDCACHE_LOCATION}/${BUILDCACHE_NAME}
+      spack buildcache push ${{ inputs.buildcache-flags }} ${BUILDCACHE_LOCATION}/${BUILDCACHE_NAME}
 
       # Update buildcache index
       spack buildcache update-index ${BUILDCACHE_LOCATION}/${BUILDCACHE_NAME}
