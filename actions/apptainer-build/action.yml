@@ -52,7 +52,7 @@ runs:
         curl -s https://raw.githubusercontent.com/apptainer/apptainer/main/tools/install-unprivileged.sh | \
         bash -s - /apptainer
       fi
-      SYSTEM_APPTAINER=$(command -v apptainer)
+      SYSTEM_APPTAINER=$(command -v apptainer) || true
       echo "::endgroup::"
 
       echo "::group::Create sha256 checksums from definition files"
@@ -139,8 +139,7 @@ runs:
           if [[ "${SYSTEM_APPTAINER}" != '' ]]
           then
             echo "Apptainer exists in build image. Trying installation with system apptainer."
-            ${SYSTEM_APPTAINER} build ${IMAGE_PATH} ${DEF_FILE}
-            BUILD_RESULT=$?
+            ${SYSTEM_APPTAINER} build ${IMAGE_PATH} ${DEF_FILE} || BUILD_RESULT=$?
           fi
           if [[ $BUILD_RESULT -ne 0 ]]
           then
