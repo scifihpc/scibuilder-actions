@@ -24,6 +24,9 @@ inputs:
   makefile-build:
     description: "Use Spack's Makefile for parallel building"
     default: ''
+  debug-build:
+    description: "Run Spack commands with debug enabled"
+    default: ''
   buildcache-install:
     description: "Only install from buildcache"
     default: ''
@@ -45,6 +48,13 @@ runs:
   - name: Build environment
     shell: bash
     run: |
+
+      DEBUG_FLAGS=""
+      DEBUG_BUILD="${{ inputs.debug-build }}"
+      if [[ ! -z "$DEBUG_BUILD" ]]
+      then
+        DEBUG_FLAGS="-d"
+      fi
 
       echo "::group::Increasing ulimit"
       ulimit -Sn ${{ inputs.ulimit }}
@@ -81,10 +91,10 @@ runs:
       mkdir -p ${BUILDCACHE_LOCATION}
 
       echo "Cleaning misc spack cache"
-      spack clean -m
+      spack ${DEBUG_FLAGS} clean -m
 
       echo "Setting bootstrap store in ${BUILDCACHE_LOCATION}/bootstrap"
-      spack bootstrap root ${BUILDCACHE_LOCATION}/bootstrap
+      spack ${DEBUG_FLAGS} bootstrap root ${BUILDCACHE_LOCATION}/bootstrap
       echo "::endgroup::"
 
       included_env_paths=(${{ inputs.included-environments }})
@@ -103,28 +113,28 @@ runs:
       echo "::endgroup::"
 
       echo "::group::Activate environment and create build cache"
-      spack env activate ${{ inputs.environment }}
+      spack ${DEBUG_FLAGS} env activate ${{ inputs.environment }}
 
       echo "Setting buildcache to be ${BUILDCACHE_LOCATION}/${BUILDCACHE_NAME}"
       mkdir -p ${BUILDCACHE_LOCATION}/${BUILDCACHE_NAME}
-      bash -c "spack mirror list | grep -q ${BUILDCACHE_NAME}_buildcache || spack mirror add ${BUILDCACHE_NAME}_buildcache ${BUILDCACHE_LOCATION}/${BUILDCACHE_NAME}"
+      bash -c "spack ${DEBUG_FLAGS} mirror list | grep -q ${BUILDCACHE_NAME}_buildcache || spack ${DEBUG_FLAGS} mirror add ${BUILDCACHE_NAME}_buildcache ${BUILDCACHE_LOCATION}/${BUILDCACHE_NAME}"
       echo "::endgroup::"
 
       echo "::group::List installed packages in buildcache"
-      spack buildcache list --allarch --long --variants
+      spack ${DEBUG_FLAGS} buildcache list --allarch --long --variants
       echo "::endgroup::"
 
       echo "::group::List installed packages"
-      spack reindex
-      spack find
+      spack ${DEBUG_FLAGS} reindex
+      spack ${DEBUG_FLAGS} find
       echo "::endgroup::"
 
       echo "Compilers defined:"
-      spack --env-dir ${{ inputs.environment }} compiler list
+      spack ${DEBUG_FLAGS} --env-dir ${{ inputs.environment }} compiler list
       echo "::endgroup::"
 
       echo "::group::Concretize environment"
-      spack concretize -f
+      spack ${DEBUG_FLAGS} concretize -f
       echo "::endgroup::"
 
       BUILDCACHE_INSTALL="${{ inputs.buildcache-install }}"
@@ -139,24 +149,24 @@ runs:
       if [[ ! -z "$MAKEFILE_BUILD" ]]
       then
         echo "::group::Install environment with Makefile"
-        spack env depfile -o Makefile
+        spack ${DEBUG_FLAGS} env depfile -o Makefile
         make -j "${{ inputs.njobs }}" SPACK_INSTALL_FLAGS="--no-check-signature ${buildcache_args}"
         echo "::endgroup::"
       else
         echo "::group::Install environment"
-        bash -c "spack install -j ${{ inputs.njobs }} ${buildcache_args} --no-check-signature --fail-fast || spack install ${buildcache_args} --no-check-signature --fail-fast --verbose"
+        bash -c "spack ${DEBUG_FLAGS} install -j ${{ inputs.njobs }} ${buildcache_args} --no-check-signature --fail-fast || spack ${DEBUG_FLAGS} install ${buildcache_args} --no-check-signature --fail-fast --verbose"
         echo "::endgroup::"
       fi
 
       echo "::group::Refresh Lmod modules"
-      spack module lmod refresh --delete-tree --yes
+      spack ${DEBUG_FLAGS} module lmod refresh --delete-tree --yes
       echo "::endgroup::"
 
       echo "::group::Push finished products to buildcache"
-      spack buildcache push ${{ inputs.buildcache-flags }} ${BUILDCACHE_LOCATION}/${BUILDCACHE_NAME}
+      spack ${DEBUG_FLAGS} buildcache push ${{ inputs.buildcache-flags }} ${BUILDCACHE_LOCATION}/${BUILDCACHE_NAME}
 
       # Update buildcache index
-      spack buildcache update-index ${BUILDCACHE_LOCATION}/${BUILDCACHE_NAME}
+      spack ${DEBUG_FLAGS} buildcache update-index ${BUILDCACHE_LOCATION}/${BUILDCACHE_NAME}
 
-      spack mirror remove ${BUILDCACHE_NAME}_buildcache
+      spack ${DEBUG_FLAGS} mirror remove ${BUILDCACHE_NAME}_buildcache
       echo "::endgroup::"
