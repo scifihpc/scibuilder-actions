@@ -29,6 +29,7 @@ jobs:
     - uses: ./actions/spack-clone-repo
       with:
         spack-version: ${{ env.SPACK_VERSION }}
+        zip-download: true
 
     - name: Add system compiler and mock compilers
       uses: ./actions/spack-add-compilers
