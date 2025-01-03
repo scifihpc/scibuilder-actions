@@ -49,7 +49,7 @@ runs:
           then
             curl --output $SPACK_ZIP -L $SPACK_ZIP_URL
           fi
-          unzip $SPACK_ZIP
+          unzip -q $SPACK_ZIP
           echo $SPACK_RELEASE_DIR
           mv $SPACK_RELEASE_DIR/* .
         fi
