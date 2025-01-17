@@ -12,6 +12,9 @@ inputs:
   environments-folder:
     description: 'Folder of environments'
     required: true
+  only_changed_files:
+    description: 'If nonempty, use the changed-files action to only run on environment files which have been updated'
+    default: ''
   freeze-file:
     description: 'File that lists frozen environments that will be skipped'
     default: ''
@@ -42,10 +45,18 @@ inputs:
 runs:
   using: 'composite'
   steps:
+  - name: Get changed files
+    id: changed-files
+    uses: tj-actions/changed-files@a2600ce61d4b9f7074622ca3a2f5e497524e6532
+    with:
+      files: |
+        ${{ inputs.environment_folder }}/*.yml
+        ${{ inputs.environment_folder }}/*.yaml
   - name: Create environment
     shell: bash
     env:
       SPACK_CUSTOMIZATIONS: ${{ inputs.customizations }}
+      CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
     run: |
       # Set global vars
       export MAIN_DIR=`pwd`
@@ -63,8 +74,15 @@ runs:
 
       export PATH=/mamba/bin:$PATH
 
+      if [ -n "${{inputs.only_changed_files}}" ] ; then
+          YML_FILES=(${CHANGED_FILES})
+      else
+          YML_FILES=(`find "${{ inputs.environments-folder }}" -regex '.*\.y[a]*ml'`)
+      fi
+
+
       echo "::group::Sort environment files with yq and create sha256 checksums"
-      for YML_FILE in `find "${{ inputs.environments-folder }}" -regex '.*\.y[a]*ml'`
+      for YML_FILE in "${YML_FILES[@]}"
       do
         YML_FILE_DIR=`dirname $YML_FILE`
         YML_FILE_NAME=`basename $YML_FILE`
@@ -100,7 +118,7 @@ runs:
       mkdir -p "${{ inputs.install-folder }}"
       echo "::endgroup::"
 
-      for YML_FILE in `find "${{ inputs.environments-folder }}" -regex '.*\.y[a]*ml'`
+      for YML_FILE in "${YML_FILES[@]}"
       do
         YML_FILE_NAME=`basename $YML_FILE`
         echo "::group::Installing environment from ${YML_FILE_NAME}"
