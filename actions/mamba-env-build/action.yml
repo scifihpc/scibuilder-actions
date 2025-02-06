@@ -132,7 +132,7 @@ runs:
         if [[ -f "${FREEZE_FILE}" ]]
         then
           grep -q "${NAME}\/${VERSION}" "${FREEZE_FILE}" && FREEZE_RESULT=0 || FREEZE_RESULT=1
-          if [[ $FREEZE_RESULT -eq 0 ]]
+          if [[ $FREEZE_RESULT -eq 0 ]] && [[ -d "${INSTALL_FOLDER}" ]]
           then
             echo "Environment ${NAME}/${VERSION} is marked as frozen, just re-creating modules."
             INSTALL_ENV=1
