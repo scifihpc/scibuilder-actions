@@ -115,8 +115,7 @@ runs:
           exit 1
         fi
 
-        INSTALL_ROOT="${{ inputs.install-folder }}/${NAME}/${VERSION}"
-        INSTALL_FOLDER="${INSTALL_ROOT}"
+        INSTALL_FOLDER="${{ inputs.install-folder }}/${NAME}/${VERSION}"
         if [[ ${{ inputs.hash-length }} -gt 0 ]]
         then
           HASH_SHORT=`head -c ${{ inputs.hash-length }} $YML_FILE.sha256sum`
@@ -133,7 +132,7 @@ runs:
         if [[ -f "${FREEZE_FILE}" ]]
         then
           grep -q "${NAME}\/${VERSION}" "${FREEZE_FILE}" && FREEZE_RESULT=0 || FREEZE_RESULT=1
-          if [[ $FREEZE_RESULT -eq 0 ]] && [[ -d "${INSTALL_ROOT}" ]]
+          if [[ $FREEZE_RESULT -eq 0 ]]
           then
             echo "Environment ${NAME}/${VERSION} is marked as frozen, just re-creating modules."
             INSTALL_ENV=1
