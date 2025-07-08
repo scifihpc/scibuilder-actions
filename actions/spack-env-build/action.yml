@@ -42,6 +42,9 @@ inputs:
   included-environments:
     description: 'Concrete environments that should be included in env'
     default: ''
+  spack-lock-destination:
+    description: 'Where to export spack.lock. Empty path (default) means no export'
+    default: ''
 runs:
   using: 'composite'
   steps:
@@ -170,3 +173,11 @@ runs:
 
       spack ${DEBUG_FLAGS} mirror remove ${BUILDCACHE_NAME}_buildcache
       echo "::endgroup::"
+
+      if [[ ! -z "${{ inputs.spack-lock-destination }}"]]
+      then
+        echo "::group::Export spack.lock"
+        cp ${{ inputs.environment }}/spack.lock ${{ inputs.spack-lock-destination }}/spack.lock
+        echo "spack.lock exported to ${{ inputs.spack-lock-destination }}/spack.lock"
+        echo "::endgroup::"
+
