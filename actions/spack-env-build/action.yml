@@ -174,10 +174,11 @@ runs:
       spack ${DEBUG_FLAGS} mirror remove ${BUILDCACHE_NAME}_buildcache
       echo "::endgroup::"
 
-      if [[ ! -z "${{ inputs.spack-lock-destination }}" ]]
+      SPACK_LOCK_DESTINATION="${{ inputs.spack-lock-destination }}"
+      if [[ ! -z "$SPACK_LOCK_DESTINATION" ]]
       then
         echo "::group::Export spack.lock"
-        cp ${{ inputs.environment }}/spack.lock ${{ inputs.spack-lock-destination }}/spack.lock
-        echo "spack.lock exported to ${{ inputs.spack-lock-destination }}/spack.lock"
+        cp ${{ inputs.environment }}/spack.lock $SPACK_LOCK_DESTINATION/spack.lock
+        echo "spack.lock exported to $SPACK_LOCK_DESTINATION/spack.lock"
         echo "::endgroup::"
       fi
