@@ -136,6 +136,10 @@ runs:
       spack ${DEBUG_FLAGS} --env-dir ${{ inputs.environment }} compiler list
       echo "::endgroup::"
 
+      echo "::group::List current status of the environment"
+      spack find -cdvl --show-full-compiler
+      echo "::endgroup::"
+
       echo "::group::Concretize environment"
       spack ${DEBUG_FLAGS} concretize -f
       echo "::endgroup::"
