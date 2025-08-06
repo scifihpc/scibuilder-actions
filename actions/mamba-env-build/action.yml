@@ -162,9 +162,20 @@ runs:
 
         if [[ "${INSTALL_ENV}" -eq 0 ]]
         then
+          echo "Checking for any additional build-time environment variables"
+
+          BUILD_TIME_VARIABLES=`awk '/BUILD_TIME_VARIABLES/ {print}' $YML_FILE | cut -f 2- -d ' '`
+
+          if [[ -z "${BUILD_TIME_VARIABLES}" ]]
+          then 
+            echo "No additional build-time environment variables set"
+          else
+            echo "Setting the following environment variables for micromamba create: ${BUILD_TIME_VARIABLES}"
+          fi
+
           echo "Installing ${NAME}/${VERSION} to ${INSTALL_FOLDER}"
 
-          micromamba create -y -f $YML_FILE -p ${INSTALL_FOLDER}
+          env $BUILD_TIME_VARIABLES micromamba create -y -f $YML_FILE -p ${INSTALL_FOLDER}
 
           echo "Exporting realized env file to ${INSTALL_FOLDER}"
 
