@@ -19,7 +19,7 @@ inputs:
     description: 'Location where additional cache will be located'
     default: /cache
   packages-version:
-    description: 'Version of the builtin package repository (tag)'
+    description: 'Version of the builtin package repository (--tag XX or --commit YY)'
     default: ''
 runs:
   using: 'composite'
@@ -69,6 +69,6 @@ runs:
         echo "::endgroup::"
 
         echo "::group::Update builtin packages repository"
-          spack repo update --tag ${{ inputs.packages-version }} builtin
+          spack repo update ${{ inputs.packages-version }} builtin
         echo "::endgroup::"
       fi
