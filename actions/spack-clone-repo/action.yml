@@ -18,6 +18,9 @@ inputs:
   cache-location:
     description: 'Location where additional cache will be located'
     default: /cache
+  packages-version:
+    description: 'Version of the builtin package repository (tag)'
+    default: ''
 runs:
   using: 'composite'
   steps:
@@ -57,3 +60,15 @@ runs:
         bash -c "[[ -d ${SPACK_LOCATION}/.git ]] && ( cd ${SPACK_LOCATION} && git reset --hard ${SPACK_VERSION} )  || ( cd ${SPACK_LOCATION} && git init && git remote add origin ${SPACK_REPO} && git fetch --tags origin && git checkout ${SPACK_VERSION} )"
       fi
       echo "::endgroup::"
+
+      if [[ "${{ inputs.packages-version }}" != '' ]]
+      then
+        echo "::group::Activate spack"
+        SPACK_LOCATION=${{ inputs.spack-location }}
+        source ${SPACK_LOCATION}/share/spack/setup-env.sh
+        echo "::endgroup::"
+
+        echo "::group::Update builtin packages repository"
+          spack repo update --tag ${{ inputs.packages-version }} builtin
+        echo "::endgroup::"
+      fi
