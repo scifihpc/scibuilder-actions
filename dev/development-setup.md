@@ -22,7 +22,7 @@
 
     ```sh
     mkdir bin
-    ACT_VERSION=v0.2.51
+    ACT_VERSION=v0.2.86
     wget -q -O - https://github.com/nektos/act/releases/download/$ACT_VERSION/act_Linux_x86_64.tar.gz | tar -xz -C bin
     ```
 
@@ -32,6 +32,20 @@
     export PATH=$PATH:$PWD/bin
     bash dev/run-workflow.sh example_workflows/spack-single-env/workflow.yml
     ```
+
+8. If the workflow requires secrets, they can be passed using the `--secrets`
+   flag as follows:
+
+    ```sh
+    $ cat .secrets
+    USERNAME=username
+    PASSWORD=password
+
+    export PATH=$PATH:$PWD/bin
+    bash dev/run-workflow.sh --secrets .secrets example_workflows/spack-single-env/workflow.yml
+    ```
+
+   See <https://nektosact.com/usage/index.html#secrets> for more info about passing secrets.
 
 ## Running the example action with docker (not recommended)
 

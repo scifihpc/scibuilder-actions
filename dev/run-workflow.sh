@@ -18,6 +18,7 @@ EOF
 
 RUNTIME="podman"
 ROOTLESS=0
+SECRETS=""
 
 for ARG in "$@"
   do
@@ -34,6 +35,10 @@ for ARG in "$@"
     -r|--no-rootless)
     ROOTLESS=1
     shift
+    ;;
+    -s|--secrets)
+    SECRETS="--secret-file $2"
+    shift 2
     ;;
   esac
 done
@@ -88,4 +93,4 @@ trap "rm $EVENTFILE" EXIT
 
 echo "Running workflow \"$WORKFLOW\" with push from branch $BRANCH"
 
-time act push -b $ACT_CONTAINER_SOCKET -P self-hosted=docker.io/catthehacker/ubuntu:act-22.04 -W $WORKFLOW -e $EVENTFILE
+time act push -b $ACT_CONTAINER_SOCKET $SECRETS -P self-hosted=docker.io/catthehacker/ubuntu:act-22.04 -W $WORKFLOW -e $EVENTFILE
